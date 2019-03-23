@@ -5,7 +5,7 @@
 - [ROS kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
 - [Point Cloud Library](http://pointclouds.org/)
 - [Realsense ROS](https://github.com/intel-ros/realsense)
-- Gazebo 7.1
+- Gazebo 7.14
 
 # How to run
 
@@ -26,8 +26,8 @@ Note:
 Do the following everytime as you open new terminals
 
 ```
-$ cd ~/lidar_S2D/catkin_ws
-$ source devel/setup.bash
+$ cd ~/lidar_S2D
+$ source environment.sh
 ```
 
 # Gazebo Equipment
