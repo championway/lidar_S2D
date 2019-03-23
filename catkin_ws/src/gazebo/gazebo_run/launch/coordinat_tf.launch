@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+  <node name="coordinate" pkg="coordinate" type="coordinate.py" output="screen" />
+  <node name="tf_publisher" pkg="coordinate" type="tf_publisher.py" output="screen" />
+</launch>

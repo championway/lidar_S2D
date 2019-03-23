@@ -1,0 +1,367 @@
+<?xml version='1.0'?>
+<robot
+  name="duckiecar" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="veh" default="$(arg veh)"/>
+  
+  <gazebo>
+    <plugin filename="libgazebo_ros_diff_drive.so" name="differential_drive_controller">
+      <legacyMode>false</legacyMode>
+      <alwaysOn>true</alwaysOn>
+      <updateRate>10</updateRate>
+      <leftJoint>lwheel_joint</leftJoint>
+      <rightJoint>rwheel_joint</rightJoint>
+      <wheelSeparation>2.02</wheelSeparation>
+      <wheelDiameter>1.5</wheelDiameter>
+      <torque>100</torque>
+      <commandTopic>$(arg veh)/cmd_vel</commandTopic>
+      <odometryTopic>$(arg veh)/odom</odometryTopic>
+      <odometryFrame>gazebo</odometryFrame>
+      <robotBaseFrame>base_link</robotBaseFrame>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="p3d_plugin" filename="libgazebo_ros_p3d.so">
+    <bodyName>base_link</bodyName>
+    <frameName>world</frameName>
+    <!--How to define an empty string in xacro?-->
+    <!--<robotNamespace>""</robotNamespace>-->
+    <updateRate>10.0</updateRate>
+    <topicName>p3d_odom</topicName>
+    <xyzOffset>0 0 0</xyzOffset>
+    <rpyOffset>0 0 0</rpyOffset>
+    <gaussianNoise>0</gaussianNoise>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="gps_plugin" filename="libhector_gazebo_ros_gps.so">
+    <updateRate>1.0</updateRate>
+    <alwaysOn>true</alwaysOn>
+    <bodyName>base_link</bodyName>
+    <frameId>base_link</frameId>
+    <topicName>gps/fix</topicName>
+    <velocityTopicName>fix_velocity</velocityTopicName>
+
+    <referenceLatitude>24.788522</referenceLatitude>
+    <referenceLongitude>121.000296</referenceLongitude>
+    <referenceAltitude>10.0</referenceAltitude>
+
+    <offset>0.0 0.0 0.0</offset>
+    <drift>0.0 0.0 0.0</drift>
+    <gaussianNoise>0.1 0.1 0.1</gaussianNoise>
+
+    <velocityOffset>0.0 0.0 0.0</velocityOffset>
+    <velocityDrift>0.0 0.0 0.0</velocityDrift>
+    <velocityGaussianNoise>0.0 0.0 0.0</velocityGaussianNoise>
+      </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="imu_plugin" filename="libhector_gazebo_ros_imu.so">
+      <updateRate>10.0</updateRate>
+      <bodyName>base_link</bodyName>
+      <topicName>imu/data</topicName>
+      <serviceName>imu_service</serviceName>
+      <frame_id>base_link</frame_id>
+      <alwaysOn>true</alwaysOn>
+
+      <accelOffset>0.0 0.0 0.0</accelOffset>
+      <accelDrift>0.0 0.0 0.0</accelDrift>
+      <accelDriftFrequency>0.00027 0.00027 0.000027</accelDriftFrequency>
+      <accelGaussianNoise>0.0 0.0 0.0</accelGaussianNoise>
+
+      <rateOffset>0.0 0.0 0.0</rateOffset>
+      <rateDrift>0.0 0.0 0.0</rateDrift>
+      <rateDriftFrequency>0.00027 0.00027 0.000027</rateDriftFrequency>
+      <rateGaussianNoise>0.0 0.0 0.0</rateGaussianNoise>
+
+      <yawOffset>0.0</yawOffset>
+      <yawDrift>0.0</yawDrift>
+      <yawDriftFrequency>0.00027</yawDriftFrequency>
+      <yawGaussianNoise>0.0</yawGaussianNoise>
+
+    </plugin>
+  </gazebo>
+
+  <gazebo reference="camera">
+    <material>Gazebo/Blue</material>
+    <sensor name="camera_1" type="camera">
+      <update_rate>30</update_rate>
+      <camera name="head">
+        <horizontal_fov>1.7</horizontal_fov>
+        <image>
+          <width>1920</width>
+          <height>1440</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>200</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_camera.so" name="camera_controller">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0.0</updateRate>
+        <cameraName>$(arg veh)/front/camera_node</cameraName>
+        <imageTopicName>image/raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>camera</frameName>
+        <hackBaseline>0.07</hackBaseline>
+      </plugin>
+    </sensor>
+  </gazebo>
+  
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.0153668055531249 4.44089209850063E-16 -0.0534671165486267"
+        rpy="0 0 0" />
+      <mass
+        value="9.47122649398591" />
+      <inertia
+        ixx="301.370472338624"
+        ixy="6.92689818265253E-14"
+        ixz="3.94653819656364"
+        iyy="1777.28080412065"
+        iyz="3.19879497076535E-16"
+        izz="2076.11241179997" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://duckiecar/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://duckiecar/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="lwheel_link">
+    <inertial>
+      <origin
+        xyz="0 -0.1 0"
+        rpy="0 0 0" />
+      <mass
+        value="5.65329598013484" />
+      <inertia
+        ixx="1.46078812586693"
+        ixy="-1.49642487348259E-19"
+        ixz="9.26909908492597E-17"
+        iyy="2.5446898530582"
+        iyz="2.48462997861263E-19"
+        izz="1.46078812586693" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://duckiecar/meshes/lwheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://duckiecar/meshes/lwheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="lwheel_joint"
+    type="continuous">
+    <origin
+      xyz="1.5 1.01 -0.200000000000002"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="lwheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="rwheel_link">
+    <inertial>
+      <origin
+        xyz="0 0.100000000000001 -4.44089209850063E-16"
+        rpy="0 0 0" />
+      <mass
+        value="5.65329598013484" />
+      <inertia
+        ixx="1.46078812586693"
+        ixy="-5.64688631530968E-21"
+        ixz="-1.49975976027745E-39"
+        iyy="2.5446898530582"
+        iyz="3.27926555825625E-33"
+        izz="1.46078812586693" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://duckiecar/meshes/rwheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://duckiecar/meshes/rwheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="rwheel_joint"
+    type="continuous">
+    <origin
+      xyz="1.5 -1.01 -0.2"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="rwheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="connect_link">
+    <inertial>
+      <origin
+        xyz="6.93889390390723E-17 -4.44089209850063E-16 -0.0822001861947705"
+        rpy="0 0 0" />
+      <mass
+        value="0.122264377536546" />
+      <inertia
+        ixx="0.353513318523549"
+        ixy="3.80767513481362E-17"
+        ixz="-1.32530970550295E-17"
+        iyy="0.2089975590477"
+        iyz="8.86602793776468E-18"
+        izz="0.441447901999517" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://duckiecar/meshes/connect_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://duckiecar/meshes/connect_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="connect_joint"
+    type="continuous">
+    <origin
+      xyz="-1.8 0 -0.15"
+      rpy="0 0 1.78584683734892E-17" />
+    <parent
+      link="base_link" />
+    <child
+      link="connect_link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="swheel_link">
+    <inertial>
+      <origin
+        xyz="0 0.0999999999999996 0"
+        rpy="0 0 0" />
+      <mass
+        value="0.118409774219159" />
+      <inertia
+        ixx="0.090404402128395"
+        ixy="-1.69109339641811E-18"
+        ixz="2.47732900679935E-18"
+        iyy="0.117748995016967"
+        iyz="-2.53078772530991E-18"
+        izz="0.090404402128395" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://duckiecar/meshes/swheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://duckiecar/meshes/swheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="swheel_joint"
+    type="continuous">
+    <origin
+      xyz="0 -0.1 -0.2"
+      rpy="0 0 -1.78584683734892E-17" />
+    <parent
+      link="connect_link" />
+    <child
+      link="swheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+</robot>

@@ -1,0 +1,92 @@
+<?xml version='1.0'?>
+<robot name="bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="veh" default="$(arg veh)"/>
+
+
+  <link name="base_link">
+          <pose>0 0 .1 0 0 0</pose>
+          <collision name="collision">
+            <geometry>
+              <box size=".4 .2 .1"/>
+            </geometry>
+          </collision>
+
+          <visual name="visual">
+            <geometry>
+              <box size=".4 .2 .1"/>
+            </geometry>
+          </visual>
+
+
+          <collision name="caster_collision">
+            <pose>-0.15 0 -0.05 0 0 0</pose>
+            <geometry>
+              <sphere radius=".05"/>
+          </geometry>
+
+          <surface>
+            <friction>
+              <ode>
+                <mu>0</mu>
+                <mu2>0</mu2>
+                <slip1>1.0</slip1>
+                <slip2>1.0</slip2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+
+        <visual name="caster_visual">
+          <pose>-0.15 0 -0.05 0 0 0</pose>
+          <geometry>
+            <sphere radius=".05"/>
+          </geometry>
+        </visual>
+  </link>
+      <link name="left_wheel">
+        <pose>0.1 0.13 0.1 0 1.5707 1.5707</pose>
+        <collision name="collision">
+          <geometry>
+            <cylinder radius=".1" length=".05"/>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder radius=".1" length=".05"/>
+          </geometry>
+        </visual>
+      </link>
+
+      <link name="right_wheel">
+        <pose>0.1 -0.13 0.1 0 1.5707 1.5707</pose>
+        <collision name="collision">
+          <geometry>
+            <cylinder radius=".1" length=".05"/>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder radius=".1" length=".05"/>
+          </geometry>
+        </visual>
+      </link>
+      <joint type="revolute" name="left_wheel_hinge">
+        <pose>0 0 -0.03 0 0 0</pose>
+        <child link="left_wheel"/>
+        <parent link="base_link"/>
+        <limit upper="6.28" lower="-6.28" effort="1000" velocity="1000.00"/>
+        <axis>
+          <xyz>0 1 0</xyz>
+        </axis>
+      </joint>
+
+      <joint type="revolute" name="right_wheel_hinge">
+        <pose>0 0 0.03 0 0 0</pose>
+        <child link="right_wheel"/>
+        <parent link="base_link"/>
+        <limit upper="6.28" lower="-6.28" effort="1000" velocity="1000.00"/>
+        <axis>
+          <xyz>0 1 0</xyz>
+        </axis>
+      </joint>
+</robot>

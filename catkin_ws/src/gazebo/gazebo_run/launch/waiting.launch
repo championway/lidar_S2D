@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+  <arg name="world_name" default="duckietown"/>
+  <arg name="veh" default="jack" doc="Name of vehicle. ex: megaman"/>
+
+  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <!--arg name="world_name" value="$(find duckietown_gazebo)/worlds/$(arg world_name).world"/-->
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+  <include file="$(find duckietown)/launch/joystick.launch">
+      <arg name="veh" value="$(arg veh)"/>
+  </include>
+
+  <param name="mybot1" command="$(find xacro)/xacro.py '$(find bot)/urdf/bot.xacro' veh:=tony"/>
+  <node name="robot1" pkg="gazebo_ros" type="spawn_model" output="screen" args="-x 1 -y -0 -z 0 -urdf -param mybot1 -model mybot1"/>
+
+  <param name="mybot2" command="$(find xacro)/xacro.py '$(find bot)/urdf/bot.xacro' veh:=david"/>
+  <node name="robot2" pkg="gazebo_ros" type="spawn_model" output="screen" args="-x -1 -y -0 -z 0 -urdf -param mybot2 -model mybot2"/>
+</launch>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+  <arg name="world_name" default="check_board"/>
+  <arg name="veh" default="david" doc="Name of vehicle. ex: megaman"/>
+
+  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find duckietown_gazebo)/worlds/$(arg world_name).world"/>
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+  <include file="$(find duckietown)/launch/joystick.launch">
+      <arg name="veh" value="$(arg veh)"/>
+  </include>
+
+  <param name="bot" command="$(find xacro)/xacro.py '$(find duckietown_gazebo)/urdf/mybot_cam_up.xacro' veh:=$(arg veh)"/>
+  <node name="mybot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-urdf -param bot -model mybot"/>
+
+  <node ns="$(arg veh)" pkg="camera_calibration" type="cameracalibrator.py" name="intrinsic_calibrator" args="--size 7x5 --square 0.063 image:=/$(arg veh)/camera_node/image/raw camera:=/$(arg veh)/camera_node"/>
+</launch>
