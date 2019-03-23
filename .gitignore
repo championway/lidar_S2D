@@ -1,0 +1,15 @@
+*~
+*.jpg
+*.bag
+*.ply
+*.pyc
+*.pth
+.DS_Store
+*.swp
+*.swo
+*.pcd
+*.caffemodel
+.ipynb*
+catkin_ws/build
+catkin_ws/devel
+catkin_ws/.catkin_workspace
