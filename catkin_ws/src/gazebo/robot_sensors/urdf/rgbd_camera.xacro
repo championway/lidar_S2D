@@ -31,8 +31,8 @@ limitations under the License.
   <xacro:macro name="rgbd_camera"
                params="name:=camera
                        robot_namespace:=/
-                       width:=320
-                       height:=240
+                       width:=640
+                       height:=480
                        update_rate:=30.0
                        min_distance:=0.05
                        max_distance:=8.0

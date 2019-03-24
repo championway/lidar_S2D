@@ -86,7 +86,7 @@
     </plugin>
   </gazebo>
 
-  <gazebo reference="camera">
+  <!--gazebo reference="camera">
     <material>Gazebo/Blue</material>
     <sensor name="camera_1" type="camera">
       <update_rate>30</update_rate>
@@ -112,7 +112,7 @@
         <hackBaseline>0.07</hackBaseline>
       </plugin>
     </sensor>
-  </gazebo>
+  </gazebo-->
 
   <link
     name="base_link">
@@ -366,7 +366,7 @@
     <axis
       xyz="0 -1 0" />
   </joint>
-  <link name="camera">
+  <!--link name="camera">
     <collision>
       <origin rpy="0 0.1 0" xyz="0 0 0"/>
       <geometry>
@@ -391,37 +391,54 @@
     <origin rpy="0 0.9 0" xyz=".52 0 .1"/>
     <parent link="base_link"/>
     <child link="camera"/>
-  </joint>
-  <!--xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/-->
+  </joint-->
 
-  <!--VLP-16 parent="base_link" name="velodyne" topic="/velodyne_points" hz="10" samples="440">
-    <origin xyz="0 0 0.05" rpy="0 0 0" />
-  </VLP-16-->
 
-  <xacro:include filename="$(find robot_sensors)/urdf/lidar_plugin.xacro" />
+  <!-- The VLP LIDAR xacro & dae source cloned from velodyne_simulator -->
+  <!-- https://bitbucket.org/DataspeedInc/velodyne_simulator/overview -->
   <xacro:if value="true">
-    <xacro:HDL32E_lidar parent="base_link" 
-                        name="velodyne" 
-                        topic="/velodyne_points" 
-                        hz="8" 
-                        samples="1800" 
-                        min_range="0" 
-                        max_range="100.0" 
-                        min_angle="-3.14" 
-                        max_angle="3.14" 
-                        noise="0.01"
-                        gpu="true">
-      <origin xyz="0.3 0 0.3" rpy="0 0 -1.57" />
-    </xacro:HDL32E_lidar>
+    <xacro:include filename="$(find robot_sensors)/urdf/VLP-16.urdf.xacro"/>
+    <xacro:VLP-16   parent="base_link" 
+                    name="velodyne_16" 
+                    topic="/velodyne_points_16" 
+                    hz="10" 
+                    samples="1875"
+                    min_range="0" 
+                    max_range="100.0"
+                    noise="0.01"
+                    gpu="true">
+      <origin xyz="0.3 0 0.5" rpy="0 0 0" />
+    </xacro:VLP-16>
+  </xacro:if>
+
+  <xacro:if value="true">
+    <xacro:include filename="$(find robot_sensors)/urdf/HDL-32E.urdf.xacro" />
+    <xacro:HDL-32E  parent="base_link" 
+                    name="velodyne_32" 
+                    topic="/velodyne_points_32" 
+                    hz="10" 
+                    samples="2187" 
+                    min_range="0" 
+                    max_range="100.0"
+                    noise="0.01"
+                    gpu="true">
+        <origin xyz="0.3 0 0.35" rpy="0 0 -1.57" />
+    </xacro:HDL-32E>
   </xacro:if>
 
 
-  <xacro:include filename="$(find robot_sensors)/urdf/rgbd_camera.xacro"/>
-
   <xacro:if value="true">
-    <xacro:rgbd_camera name="rgbd" width="640" height="480" update_rate="20" pointCloudCutoffMax="6"/>
+  <xacro:include filename="$(find robot_sensors)/urdf/rgbd_camera.xacro"/>
+    <xacro:rgbd_camera  name="rgbd" 
+                        width="640" 
+                        height="480" 
+                        update_rate="20"
+                        min_distance="0.05"
+                        max_distance="100.0"
+                        pointCloudCutoff="0.6"
+                        pointCloudCutoffMax="100"/>
     <joint name="rgbd_camera_mount_joint" type="fixed">
-      <origin xyz="0.1 0 0.15" rpy="0 0.2618 0"/>
+      <origin xyz="0.3 0 0.62" rpy="0 0.0 0"/>
       <parent link="base_link"/>
       <child link="rgbd_link"/>
     </joint>

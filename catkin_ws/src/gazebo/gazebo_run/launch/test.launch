@@ -28,7 +28,8 @@
   <arg name="z" default="0"/>
   <arg name="yaw" default="0.0"/>
 
-  <param name="mybot" command="$(find xacro)/xacro.py '$(find bot)/urdf/bot.xacro' veh:=david"/>
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find bot)/urdf/bot.xacro' veh:=david"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
   <!--param name="robot_description" command="$(find xacro)/xacro.py '$(find x1_description)/urdf/x1.urdf.xacro'"/-->
 
   <node name="robot_model" pkg="gazebo_ros" type="spawn_model" output="screen" 
@@ -37,6 +38,6 @@
               -z $(arg z) 
               -Y $(arg yaw)
               -urdf 
-              -param mybot 
+              -param robot_description 
               -model bot" />
 </launch>

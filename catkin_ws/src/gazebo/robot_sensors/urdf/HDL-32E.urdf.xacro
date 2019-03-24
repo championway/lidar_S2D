@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="HDL32E_lidar">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="HDL-32E">
   <xacro:property name="M_PI" value="3.1415926535897931" />
-  <xacro:macro name="HDL32E_lidar" params="*origin parent:=base_link name:=velodyne topic:=/velodyne_points hz:=8 lasers:=32 samples:=2187 collision_range:=0.3 min_range:=0.9 max_range:=130.0 noise:=0.008 min_angle:=-${M_PI} max_angle:=${M_PI} gpu:=true">
+  <xacro:macro name="HDL-32E" params="*origin parent:=base_link name:=velodyne topic:=/velodyne_points hz:=10 lasers:=32 samples:=2187 collision_range:=0.3 min_range:=0.9 max_range:=130.0 noise:=0.008 min_angle:=-${M_PI} max_angle:=${M_PI} gpu:=true">
 
     <joint name="${name}_base_mount_joint" type="fixed">
       <xacro:insert_block name="origin" /> 
@@ -19,7 +19,7 @@
       </inertial>
       <visual>
         <geometry>
-          <mesh filename="model://HDL32E/HDL32E_base.dae" />
+          <mesh filename="model://lidar/HDL32E_base.dae" />
         </geometry>
       </visual>
       <collision>
@@ -45,7 +45,7 @@
       <visual>
         <origin xyz="0 0 -0.09081" rpy="0 0 0" />
         <geometry>
-          <mesh filename="model://HDL32E/HDL32E_scan.dae" />
+          <mesh filename="model://lidar/HDL32E_scan.dae" />
         </geometry>
       </visual>
     </link>
@@ -53,7 +53,7 @@
     <!-- Gazebo requires the velodyne_gazebo_plugins package -->
     <gazebo reference="${name}">
       <xacro:if value="${gpu}">
-        <sensor type="gpu_ray" name="${name}_HDL32E">
+        <sensor type="gpu_ray" name="${name}-HDL32E">
           <pose>0 0 0 0 0 0</pose>
           <visualize>false</visualize>
           <update_rate>${hz}</update_rate>
@@ -93,7 +93,7 @@
         </sensor>
       </xacro:if>
       <xacro:unless value="${gpu}">
-        <sensor type="ray" name="${name}_HDL32E">
+        <sensor type="ray" name="${name}-HDL32E">
           <pose>0 0 0 0 0 0</pose>
           <visualize>false</visualize>
           <update_rate>${hz}</update_rate>
