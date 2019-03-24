@@ -7,6 +7,17 @@
 - [Realsense ROS](https://github.com/intel-ros/realsense)
 - Gazebo 7.14
 
+# Gazebo Equipment
+
+## Sensor
+
+### Depth Camera
+- Kinect depth camera
+
+### LIDAR
+- VLP-16 LIDAR
+- VLP-32 LIDAR
+
 # How to run
 
 ## Installation
@@ -30,12 +41,22 @@ $ cd ~/lidar_S2D
 $ source environment.sh
 ```
 
-# Gazebo Equipment
+## Open gazebo
+```
+$ roslaunch gazebo_run test.launch
+```
 
-## Sensor
+## Save LIDAR depth image 
+```
+$ rosrun rgbd_camera image_process
+```
 
-### Depth Camera
-- Realsense D435
+## LIDAR point cloud to depth image 
+```
+$ rosrun rgbd_camera lidar2depth
+```
 
-### LIDAR
-- 16-bin 3D LIDAR
+## Depth image to LIDAR point cloud
+```
+$ rosrun rgbd_camera depth2lidar
+```
