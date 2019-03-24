@@ -114,12 +114,12 @@ LIDAR2Depth::LIDAR2Depth(ros::NodeHandle &n){
 	depth_image = cv::Mat(480, 640, CV_16SC1, cv::Scalar(0, 0, 0));
 
 	// Publisher
-	pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("/ppp", 1);
-	pub_image = nh.advertise<sensor_msgs::Image> ("/dp_img", 1);
+	pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("/l2d_pcl", 1);
+	pub_image = nh.advertise<sensor_msgs::Image> ("/l2d_img", 1);
 
 	// Subscriber
 	if(is_LIDAR){
-		sub_cloud = nh.subscribe("/X1/points", 1, &LIDAR2Depth::cbCloud, this);
+		sub_cloud = nh.subscribe("/velodyne_points_16", 1, &LIDAR2Depth::cbCloud, this);
 	}
 	else{
 		sub_cloud = nh.subscribe("/X1/rgbd_camera/depth/points", 1, &LIDAR2Depth::cbCloud, this);
@@ -135,7 +135,7 @@ void LIDAR2Depth::get_img_coordinate(float x, float y,float z){
 void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	if(!get_tf){
 		try{
-			lr.lookupTransform("/X1/rgbd_camera_link", "/X1/front_laser",
+			lr.lookupTransform("/rgbd_link", "/velodyne_16",
 									ros::Time(0), tf_lidar2cam);
 			get_tf = true;
 		}
@@ -194,7 +194,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	sensor_msgs::PointCloud2 pcl_output;
 	pcl::toROSMsg(*cloud_out, pcl_output);
 	pcl_output.header = cloud_msg->header;
-	pcl_output.header.frame_id = "/X1/rgbd_camera_link";
+	pcl_output.header.frame_id = "/rgbd_link";
 	pub_cloud.publish(pcl_output);
 }
 
@@ -213,7 +213,7 @@ void LIDAR2Depth::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, Poin
 				continue;
 			}
 			get_img_coordinate(x, y, img_z);
-			if (int(img_x) < 640 && int(img_y) < 480 && int(img_x) >= 0 && int(img_y) >= 0){
+			if (int(img_x) < 640 && int(img_y) < 480 && int(img_x) > 0 && int(img_y) > 0){
 				cloud_out->points[i].r = 255;
 				cloud_out->points[i].g = 255;
 				cloud_out->points[i].b = 0;

@@ -24,7 +24,6 @@ bool is_gazebo = true;
 class DEPTH2LIDAR{
   public:
     DEPTH2LIDAR();
-    //void generate_pointcloud(PointCloud<PointXYZRGB>::Ptr);
     void get_msg();
     void callback(const sensor_msgs::ImageConstPtr&);
     void callback_sync(const sensor_msgs::ImageConstPtr&,const sensor_msgs::ImageConstPtr&);
@@ -48,8 +47,8 @@ class DEPTH2LIDAR{
 
 DEPTH2LIDAR::DEPTH2LIDAR(){
 	NodeHandle nh;
-	pc2 = nh.advertise<sensor_msgs::PointCloud2> ("/pc", 10);
-	depth_image = nh.subscribe<sensor_msgs::Image>("/generate_dp", 1, &DEPTH2LIDAR::callback, this);
+	pc2 = nh.advertise<sensor_msgs::PointCloud2> ("/d2l_pcl", 10);
+	depth_image = nh.subscribe<sensor_msgs::Image>("/l2d_img", 1, &DEPTH2LIDAR::callback, this);
 }
 
 void DEPTH2LIDAR::getXYZ(float* a, float* b,float zc){
@@ -100,7 +99,7 @@ void DEPTH2LIDAR::callback(const sensor_msgs::ImageConstPtr& depth_image){
     sensor_msgs::PointCloud2 object_cloud_msg;
     toROSMsg(*pc, object_cloud_msg);
     if(is_gazebo){
-      object_cloud_msg.header.frame_id = "X1/rgbd_camera_link";
+      object_cloud_msg.header.frame_id = "/rgbd_link";
     }
     else{
       object_cloud_msg.header.frame_id = "camera_color_optical_frame";
@@ -109,69 +108,18 @@ void DEPTH2LIDAR::callback(const sensor_msgs::ImageConstPtr& depth_image){
 	return;
 }
 
-/*void DEPTH2LIDAR::callback_sync(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::ImageConstPtr& depth_image){
-  pc.reset(new PointCloud<PointXYZRGB>());
-  cv_bridge::CvImagePtr img_ptr_depth;
-  if(is_gazebo){
-    img_ptr_depth = cv_bridge::toCvCopy(depth_image, sensor_msgs::image_encodings::TYPE_32FC1);
-  }
-	else{
-    img_ptr_depth = cv_bridge::toCvCopy(depth_image, sensor_msgs::image_encodings::TYPE_16UC1);
-  }
-	cv_bridge::CvImagePtr img_ptr_img = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::RGB8);
-	for( int nrow = 0; nrow < img_ptr_depth->image.rows; nrow++){  
-       for(int ncol = 0; ncol < img_ptr_depth->image.cols; ncol++){  
-       	if (img_ptr_depth->image.at<unsigned short int>(nrow,ncol) > 1){
-       		
-       		pcl::PointXYZRGB point;
-       		float* x = new float(nrow);
-       		float* y = new float(ncol);
-          float z;
-          if(is_gazebo){
-            z = float(img_ptr_depth->image.at<float>(nrow,ncol));
-          }
-       	 	else{
-            z = float(img_ptr_depth->image.at<unsigned short int>(nrow,ncol))/1000.;
-          }
-
-       		getXYZ(y,x,z);
-       		point.x = z;
-       		point.y = -*y;
-       		point.z = -*x;
-       		Vec3b intensity =  img_ptr_img->image.at<Vec3b>(nrow, ncol); 
-       		point.r = int(intensity[0]);
-       		point.g = int(intensity[1]);
-       		point.b = int(intensity[2]);
-       		pc->points.push_back(point);
-       		free(x);
-       		free(y);
-       		// delete x;
-       		// delete y;
-       	} 
-       }  
-    } 
-
-    //cout << pc->points.size() << endl;
-    
-    sensor_msgs::PointCloud2 object_cloud_msg;
-    toROSMsg(*pc, object_cloud_msg);
-    if(is_gazebo){
-      object_cloud_msg.header.frame_id = "X1/rgbd_camera_link";
-    }
-    else{
-      object_cloud_msg.header.frame_id = "camera_color_optical_frame";
-    }
-    pc2.publish(object_cloud_msg);
-	return;
-}*/
-
 void DEPTH2LIDAR::get_msg(){
   sensor_msgs::CameraInfo::ConstPtr msg;
-  if(is_gazebo){
-    msg = ros::topic::waitForMessage<sensor_msgs::CameraInfo>("/X1/rgbd_camera/rgb/camera_info",ros::Duration(10));
-  }
-  else{
-    msg = ros::topic::waitForMessage<sensor_msgs::CameraInfo>("/camera/color/camera_info",ros::Duration(10));
+  bool get_tf = false;
+  while(!get_tf){
+    if(is_gazebo){
+      msg = ros::topic::waitForMessage<sensor_msgs::CameraInfo>("/rgbd/rgb/camera_info",ros::Duration(10));
+      get_tf = true;
+    }
+    else{
+      msg = ros::topic::waitForMessage<sensor_msgs::CameraInfo>("/camera/color/camera_info",ros::Duration(10));
+      get_tf = true;
+    }
   }
 	fx = msg->P[0];
 	fy = msg->P[5];
