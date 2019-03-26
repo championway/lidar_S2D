@@ -48,7 +48,7 @@ class DEPTH2LIDAR{
 DEPTH2LIDAR::DEPTH2LIDAR(){
 	NodeHandle nh;
 	pc2 = nh.advertise<sensor_msgs::PointCloud2> ("/d2l_pcl", 10);
-	depth_image = nh.subscribe<sensor_msgs::Image>("/l2d_img", 1, &DEPTH2LIDAR::callback, this);
+	depth_image = nh.subscribe<sensor_msgs::Image>("/gan_img", 1, &DEPTH2LIDAR::callback, this);
 }
 
 void DEPTH2LIDAR::getXYZ(float* a, float* b,float zc){
@@ -63,7 +63,7 @@ void DEPTH2LIDAR::callback(const sensor_msgs::ImageConstPtr& depth_image){
   pc.reset(new PointCloud<PointXYZRGB>());
   cv_bridge::CvImagePtr img_ptr_depth;
   if(is_gazebo){
-    img_ptr_depth = cv_bridge::toCvCopy(depth_image, sensor_msgs::image_encodings::TYPE_16SC1);
+    img_ptr_depth = cv_bridge::toCvCopy(depth_image, sensor_msgs::image_encodings::TYPE_16UC1);
   }
 	else{
     img_ptr_depth = cv_bridge::toCvCopy(depth_image, sensor_msgs::image_encodings::TYPE_16UC1);
@@ -77,10 +77,10 @@ void DEPTH2LIDAR::callback(const sensor_msgs::ImageConstPtr& depth_image){
        		float* y = new float(ncol);
           float z;
           if(is_gazebo){
-            z = float(img_ptr_depth->image.at<unsigned short int>(nrow,ncol))/1000.;
+            z = float(img_ptr_depth->image.at<unsigned short int>(nrow,ncol))/655.;
           }
        	 	else{
-            z = float(img_ptr_depth->image.at<unsigned short int>(nrow,ncol))/1000.;
+            z = float(img_ptr_depth->image.at<unsigned short int>(nrow,ncol))/655.;
           }
 
        		getXYZ(y,x,z);

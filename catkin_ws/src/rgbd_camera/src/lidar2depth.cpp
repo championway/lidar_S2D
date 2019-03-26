@@ -111,7 +111,7 @@ LIDAR2Depth::LIDAR2Depth(ros::NodeHandle &n){
 	nh = n;
 	counts = 0;
 	node_name = ros::this_node::getName();
-	depth_image = cv::Mat(480, 640, CV_16SC1, cv::Scalar(0, 0, 0));
+	depth_image = cv::Mat(480, 640, CV_16UC1, cv::Scalar(0, 0, 0));
 
 	// Publisher
 	pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("/l2d_pcl", 1);
@@ -119,7 +119,7 @@ LIDAR2Depth::LIDAR2Depth(ros::NodeHandle &n){
 
 	// Subscriber
 	if(is_LIDAR){
-		sub_cloud = nh.subscribe("/velodyne_points_16", 1, &LIDAR2Depth::cbCloud, this);
+		sub_cloud = nh.subscribe("/velodyne_points_32", 1, &LIDAR2Depth::cbCloud, this);
 	}
 	else{
 		sub_cloud = nh.subscribe("/X1/rgbd_camera/depth/points", 1, &LIDAR2Depth::cbCloud, this);
@@ -135,7 +135,7 @@ void LIDAR2Depth::get_img_coordinate(float x, float y,float z){
 void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	if(!get_tf){
 		try{
-			lr.lookupTransform("/rgbd_link", "/velodyne_16",
+			lr.lookupTransform("/rgbd_link", "/velodyne_32",
 									ros::Time(0), tf_lidar2cam);
 			get_tf = true;
 		}
@@ -185,7 +185,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	// PUblish image
 	//std::cout << result.cols << ',' << result.rows << std::endl;
 	cvIMG.header = cloud_msg->header;
-	cvIMG.encoding = sensor_msgs::image_encodings::TYPE_16SC1;
+	cvIMG.encoding = sensor_msgs::image_encodings::TYPE_16UC1;
 	cvIMG.image = depth_image;
 	//img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", depth_image).toImageMsg();
 	pub_image.publish(cvIMG.toImageMsg());
@@ -200,7 +200,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 
 void LIDAR2Depth::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, PointCloudXYZRGB::Ptr cloud_out){
   //depth_image.setTo(cv::Scalar(0, 0, 0));
-  	depth_image = cv::Mat(480, 640, CV_16SC1, cv::Scalar(0, 0, 0));
+  	depth_image = cv::Mat(480, 640, CV_16UC1, cv::Scalar(0, 0, 0));
 	for(int i = 0; i < cloud_in->points.size(); i++){
 		float x;
 		float y;
@@ -218,7 +218,7 @@ void LIDAR2Depth::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, Poin
 				cloud_out->points[i].g = 255;
 				cloud_out->points[i].b = 0;
 				
-				depth_image.at<signed short int>(480-int(img_y), 640-int(img_x)) = img_z*1000;
+				depth_image.at<signed short int>(480-int(img_y), 640-int(img_x)) = img_z*655;
 			}
 		}
 

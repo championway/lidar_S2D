@@ -38,7 +38,7 @@ class SPARSE2DENSE():
 		self.generator = GeneratorUNet(in_channels=1, out_channels=1)
 		if self.cuda:
 			self.generator = self.generator.cuda()
-		self.generator.load_state_dict(torch.load('/home/arg_ws3/PyTorch-GAN/implementations/pix2pix/saved_models/sparse2dense/generator_140.pth'))
+		self.generator.load_state_dict(torch.load('/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/result/saved_models/S2D/generator_94.pth'))
 		self.cv_depthimage = None
 		self.generate_img = None
 		self.Tensor = torch.cuda.FloatTensor if self.cuda else torch.FloatTensor
@@ -46,7 +46,7 @@ class SPARSE2DENSE():
 												  PIL.Image.BICUBIC),
 												  transforms.ToTensor()])
 		#-------point cloud without color-------
-		self.depth_sub = rospy.Subscriber("/dp_img", Image, self.img_cb, queue_size = 1, buff_size = 2**24)
+		self.depth_sub = rospy.Subscriber("/l2d_img", Image, self.img_cb, queue_size = 1, buff_size = 2**24)
 		#self.depth_sub = rospy.Subscriber("/X1/rgbd_camera/depth/image_raw", Image, self.img_cb, queue_size = 1, buff_size = 2**24)
 		#------------------------------------
 
@@ -58,33 +58,50 @@ class SPARSE2DENSE():
 		#------------------------------------
 
 		#self.pc_pub = rospy.Publisher("/pointcloud2_transformed", PointCloud2, queue_size=1)
-		self.image_pub = rospy.Publisher("/generate_dp", Image, queue_size = 1)
+		self.image_pub = rospy.Publisher("/gan_img", Image, queue_size = 1)
 		self.points = []
 		rospy.loginfo("Start Generating depth image")
 
 	def img_cb(self, depth_data):
 		self.cv_depthimage = self.bridge.imgmsg_to_cv2(depth_data, "16UC1")
 		self.generate_image()
-		self.image_pub.publish(self.bridge.cv2_to_imgmsg(self.generate_img, "16SC1"))
+		self.image_pub.publish(self.bridge.cv2_to_imgmsg(self.generate_img, "16UC1"))
 
 	def generate_image(self):
 		prev_time = time.time()
-		self.cv_depthimage = np.array(self.cv_depthimage)/10000.
-		pil_im = PIL.Image.fromarray(self.cv_depthimage)
-		pil_im = self.data_transform(pil_im)
-		pil_im = pil_im.unsqueeze(0)
+		# self.cv_depthimage = np.array(self.cv_depthimage)/10000.
 
-		my_img = Variable(pil_im.type(self.Tensor))
-		my_img_fake = self.generator(my_img)
+		image = np.array(self.cv_depthimage)
+		image = image/655.
+		image = cv2.resize(image, (256, 256))
+		image = torch.tensor(image).unsqueeze(dim=0).unsqueeze(dim=0)
+		image = Variable(image.type(self.Tensor))
+
+		# pil_im = PIL.Image.fromarray(self.cv_depthimage)
+		# pil_im = self.data_transform(pil_im)
+		# pil_im = pil_im.unsqueeze(0)
+
+		# my_img = Variable(pil_im.type(self.Tensor))
+		my_img_fake = self.generator(image)
 		my_img_fake = my_img_fake.squeeze(0).detach().cpu()
 		#pil_ = my_img_fake.mul(255).clamp(0, 255).to(torch.float32).permute(1, 2, 0)
-		pil_ = my_img_fake.mul(10000).clamp(0, 10000).to(torch.int16).permute(1, 2, 0)
-		#pil_ = my_img_fake.mul(255).clamp(0, 255).byte().permute(1, 2, 0)
-		pil_ = np.array(pil_)
-		self.generate_img = pil_[...,::-1]
-		#pil_ = np.float32(pil_)
-		#self.mask_dilate()
-		self.generate_img = cv2.resize(self.generate_img, (640, 480))
+		# pil_ = my_img_fake.mul(10000).clamp(0, 10000).to(torch.int16).permute(1, 2, 0)
+		# #pil_ = my_img_fake.mul(255).clamp(0, 255).byte().permute(1, 2, 0)
+		# pil_ = np.array(pil_)
+		# self.generate_img = pil_[...,::-1]
+		# #pil_ = np.float32(pil_)
+		# #self.mask_dilate()
+		# self.generate_img = cv2.resize(self.generate_img, (640, 480))
+
+		pil = my_img_fake.to(torch.int16).permute(1, 2, 0)
+		pil = np.array(pil).astype(np.float64)
+		pil = pil[...,::-1]
+		pil = cv2.resize(pil, (640, 480), interpolation=cv2.INTER_CUBIC)
+		cv2.imwrite('sss.png', pil)
+		pil = pil*655.
+		print(pil.max())
+		pil = pil.astype(np.uint16)
+		self.generate_img = pil
 		self.mask_dilate()
 		#print("Hz: ", 1./(time.time() - prev_time))
 	def mask_dilate(self):

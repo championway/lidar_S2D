@@ -33,6 +33,7 @@ Publish:
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <std_srvs/Trigger.h>
 //PCL lib
 #include <pcl/io/pcd_io.h>
 #include <pcl_ros/point_cloud.h>
@@ -68,6 +69,7 @@ private:
 	Eigen::Affine3d transform_eigen;
 
 	// Image
+	bool SAVE_IMG;
 	sensor_msgs::ImagePtr img_msg;
 	cv_bridge::CvImage cvIMG;
 	cv::Mat out_img;
@@ -82,6 +84,7 @@ private:
 	ros::NodeHandle nh;
 	ros::Publisher  pub_cloud;
 	ros::Publisher  pub_image;
+	ros::ServiceServer img_srv;
 
 	message_filters::Subscriber<sensor_msgs::PointCloud2> pcl_16_sub;
 	message_filters::Subscriber<sensor_msgs::PointCloud2> pcl_32_sub;
@@ -122,6 +125,7 @@ public:
 	void get_img_coordinate(float, float, float);
 	void pointcloud_to_image(const PointCloudXYZRGB::Ptr, PointCloudXYZRGB::Ptr);
 	void pcl_preprocess(PointCloudXYZRGB::Ptr);
+	bool save_image(std_srvs::Trigger::Request&, std_srvs::Trigger::Response&);
 };
 
 IMAGE_PROCESS::IMAGE_PROCESS(ros::NodeHandle &n){
@@ -135,10 +139,14 @@ IMAGE_PROCESS::IMAGE_PROCESS(ros::NodeHandle &n){
 	out_img = cv::Mat(480, 640, CV_32FC1, cv::Scalar(0, 0, 0));
 	pcl_img_16 = cv::Mat(480, 640, CV_16UC1, cv::Scalar(0, 0, 0));
 	pcl_img_32 = cv::Mat(480, 640, CV_16UC1, cv::Scalar(0, 0, 0));
+	SAVE_IMG = false;
 
 	// Publisher
 	pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("/l2d_pcl", 1);
 	pub_image = nh.advertise<sensor_msgs::Image> ("/l2d_img", 1);
+
+	// ROS Service
+	img_srv = nh.advertiseService("/save_image", &IMAGE_PROCESS::save_image, this);
 }
 
 void IMAGE_PROCESS::callback_sync(const sensor_msgs::PointCloud2ConstPtr& cloud_msg_16, const sensor_msgs::PointCloud2ConstPtr& cloud_msg_32, const sensor_msgs::ImageConstPtr& depth_image){
@@ -163,10 +171,10 @@ void IMAGE_PROCESS::callback_sync(const sensor_msgs::PointCloud2ConstPtr& cloud_
 		}
 		return;
 	}
-	counter++;
-	if(counter%7 != 0){
+	if(!SAVE_IMG){
 		return;
 	}
+	SAVE_IMG = false;
 	PointCloudXYZ::Ptr cloud_XYZ_16(new PointCloudXYZ);
 	PointCloudXYZ::Ptr cloud_XYZ_32(new PointCloudXYZ);
 	PointCloudXYZRGB::Ptr cloud_lidar_16(new PointCloudXYZRGB);
@@ -203,7 +211,7 @@ void IMAGE_PROCESS::callback_sync(const sensor_msgs::PointCloud2ConstPtr& cloud_
 			cloud_out_16->points[i].b = 0;
 			// I change 32FC1 to 16UC1, so the image will become an integer matrix
 			// As a result, I scale up the pixel value just like D435
-			pcl_img_16.at<unsigned short int>(480-int(img_y), 640-int(img_x)) = img_z*1000;
+			pcl_img_16.at<unsigned short int>(480-int(img_y), 640-int(img_x)) = img_z*655;
 		}
 	}
 
@@ -223,7 +231,7 @@ void IMAGE_PROCESS::callback_sync(const sensor_msgs::PointCloud2ConstPtr& cloud_
 			cloud_out_32->points[i].b = 0;
 			// I change 32FC1 to 16UC1, so the image will become an integer matrix
 			// As a result, I scale up the pixel value just like D435
-			pcl_img_32.at<unsigned short int>(480-int(img_y), 640-int(img_x)) = img_z*1000;
+			pcl_img_32.at<unsigned short int>(480-int(img_y), 640-int(img_x)) = img_z*655;
 		}
 	}
 
@@ -242,17 +250,24 @@ void IMAGE_PROCESS::callback_sync(const sensor_msgs::PointCloud2ConstPtr& cloud_
 	cvIMG.encoding = sensor_msgs::image_encodings::TYPE_16UC1;
 	string pcl_fname, depth_fname;
 	// we later need to do denormalize when we want to decode img_ptr_depth->image
-	img_ptr_depth->image.convertTo(img_ptr_depth->image, CV_16UC1, 1000);
+	img_ptr_depth->image.convertTo(img_ptr_depth->image, CV_16UC1, 655);
 	cv::imwrite("/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/depth/img_" + std::to_string(img_count) + ".png", img_ptr_depth->image);
 	cv::imwrite("/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/pcl_16/img_" + std::to_string(img_count) + ".png", pcl_img_16);
 	cv::imwrite("/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/pcl_32/img_" + std::to_string(img_count) + ".png", pcl_img_32);
-	cv::imwrite("./depth1.png", img_ptr_depth->image);
-	//cv::imwrite("./pcl1.png", pcl_img_16);
-	//cv::imwrite("./pcl2.png", pcl_img_32);
-
+	// cv::imwrite("./depth1.png", img_ptr_depth->image);
+	// cv::imwrite("./pcl1.png", pcl_img_16);
+	// cv::imwrite("./pcl2.png", pcl_img_32);
+	std::cout<<"Save image: " << "img_" + std::to_string(img_count) + ".png" << std::endl;
 	cvIMG.image = pcl_img_16;
 	pub_image.publish(cvIMG.toImageMsg());
 	img_count++;
+}
+
+bool IMAGE_PROCESS::save_image(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res){
+	res.success = 1;
+	res.message = "Save_image";
+	SAVE_IMG = true;
+	return true;
 }
 
 void IMAGE_PROCESS::get_img_coordinate(float x, float y,float z){

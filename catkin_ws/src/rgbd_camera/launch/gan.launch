@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+  <!--include file="$(find gazebo_ros)/launch/empty_world.launch"></include-->
+  <node pkg="rgbd_camera" name="lidar2depth" type="lidar2depth" output="screen"/>
+  <node pkg="rgbd_camera" name="gan" type="sparse2dense.py" output="screen"/>
+  <node pkg="rgbd_camera" name="depth2lidar" type="depth2lidar" output="screen"/>
+</launch>

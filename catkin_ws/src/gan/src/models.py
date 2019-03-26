@@ -112,14 +112,14 @@ class Discriminator(nn.Module):
             layers.append(nn.LeakyReLU(0.2, inplace=True))
             return layers
 
-        seq_layers = []
-        seq_layers.extend(discriminator_block(in_channels*2, 64, normalization=False))
-        seq_layers.extend(discriminator_block(64, 128))
-        seq_layers.extend(discriminator_block(128, 256))
-        seq_layers.extend(discriminator_block(256, 512))
-        seq_layers.append(nn.ZeroPad2d((1, 0, 1, 0)))
-        seq_layers.append(nn.Conv2d(512, 1, 4, padding=1, bias=False))
-        self.model = nn.Sequential(*seq_layers)
+        self.model = nn.Sequential(
+            *discriminator_block(in_channels*2, 64, normalization=False),
+            *discriminator_block(64, 128),
+            *discriminator_block(128, 256),
+            *discriminator_block(256, 512),
+            nn.ZeroPad2d((1, 0, 1, 0)),
+            nn.Conv2d(512, 1, 4, padding=1, bias=False)
+        )
 
     def forward(self, img_A, img_B):
         # Concatenate image and condition image by channels to produce input
