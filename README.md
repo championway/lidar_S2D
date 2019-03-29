@@ -1,4 +1,4 @@
-# lidar_S2D - LIDAR Point Cloud from Sparse to Dense
+# lidar_S2D - LIDAR Point Cloud from Sparse to Dense using GAN
 
 ![32 Bin LIDAR Point Cloud From Sparse To Dense](https://github.com/championway/lidar_S2D/blob/master/image/simple_demo.gif)
 
