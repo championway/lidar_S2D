@@ -38,11 +38,11 @@ class SPARSE2DENSE():
 		self.generator = GeneratorUNet(in_channels=1, out_channels=1)
 		if self.cuda:
 			self.generator = self.generator.cuda()
-		self.generator.load_state_dict(torch.load('/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/result/saved_models/S2D/generator_94.pth'))
+		self.generator.load_state_dict(torch.load('/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/result/saved_models/S2D/generator.pth'))
 		self.cv_depthimage = None
 		self.generate_img = None
 		self.Tensor = torch.cuda.FloatTensor if self.cuda else torch.FloatTensor
-		self.data_transform = transforms.Compose([transforms.Resize((256, 256), 
+		self.data_transform = transforms.Compose([transforms.Resize((512, 512), 
 												  PIL.Image.BICUBIC),
 												  transforms.ToTensor()])
 		#-------point cloud without color-------
@@ -61,6 +61,12 @@ class SPARSE2DENSE():
 		self.image_pub = rospy.Publisher("/gan_img", Image, queue_size = 1)
 		self.points = []
 		rospy.loginfo("Start Generating depth image")
+		# self.cv_depthimage = cv2.imread('/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/depth_655/img_366.png', cv2.IMREAD_ANYDEPTH)
+		# self.cv_depthimage = self.cv_depthimage.astype(np.int16)
+		# while(True):
+		# 	#self.generate_image()
+		# 	self.image_pub.publish(self.bridge.cv2_to_imgmsg(self.cv_depthimage, "16SC1"))
+		# 	rospy.sleep(0.5)
 
 	def img_cb(self, depth_data):
 		self.cv_depthimage = self.bridge.imgmsg_to_cv2(depth_data, "16UC1")
@@ -73,7 +79,7 @@ class SPARSE2DENSE():
 
 		image = np.array(self.cv_depthimage)
 		image = image/655.
-		image = cv2.resize(image, (256, 256))
+		## image = cv2.resize(image, (512, 512))
 		image = torch.tensor(image).unsqueeze(dim=0).unsqueeze(dim=0)
 		image = Variable(image.type(self.Tensor))
 
@@ -92,15 +98,14 @@ class SPARSE2DENSE():
 		# #pil_ = np.float32(pil_)
 		# #self.mask_dilate()
 		# self.generate_img = cv2.resize(self.generate_img, (640, 480))
-
-		pil = my_img_fake.to(torch.int16).permute(1, 2, 0)
-		pil = np.array(pil).astype(np.float64)
+		pil = my_img_fake.permute(1, 2, 0)
+		pil = np.array(pil)
 		pil = pil[...,::-1]
-		pil = cv2.resize(pil, (640, 480), interpolation=cv2.INTER_CUBIC)
-		cv2.imwrite('sss.png', pil)
+		## pil = cv2.resize(pil, (512, 512), interpolation=cv2.INTER_CUBIC)
 		pil = pil*655.
-		print(pil.max())
+		pil[pil < 0] = 0
 		pil = pil.astype(np.uint16)
+		#cv2.imwrite('sss.png', pil/655.)
 		self.generate_img = pil
 		self.mask_dilate()
 		#print("Hz: ", 1./(time.time() - prev_time))

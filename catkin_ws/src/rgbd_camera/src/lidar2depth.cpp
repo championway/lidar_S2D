@@ -23,6 +23,7 @@ Publish:
 #include <ros/console.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
@@ -30,6 +31,7 @@ Publish:
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
+#include "realsense2_camera/Extrinsics.h"
 //PCL lib
 #include <pcl/io/pcd_io.h>
 #include <pcl_ros/point_cloud.h>
@@ -86,12 +88,14 @@ private:
 	float img_x;
 	float img_y;
 	float img_z;
+	int IMG_WIDTH = 512;
+	int IMG_HEIGHT = 512;
 
 	// Gazebo
-	float fx = 554.254691191187;
-	float fy = 554.254691191187;
-	float cx = 320.5;
-	float cy = 240.5;
+	float fx;
+	float fy;
+	float cx;
+	float cy;
 
 	// LIDAR to CAMERA TF
 	//tf::TransformListener listener(ros::Duration(10));
@@ -101,6 +105,7 @@ private:
 
 public:
 	LIDAR2Depth(ros::NodeHandle&);
+    void get_msg();
 	void cbCloud(const sensor_msgs::PointCloud2ConstPtr&);
 	void get_img_coordinate(float, float, float);
 	void pointcloud_to_image(const PointCloudXYZRGB::Ptr, PointCloudXYZRGB::Ptr);
@@ -111,7 +116,9 @@ LIDAR2Depth::LIDAR2Depth(ros::NodeHandle &n){
 	nh = n;
 	counts = 0;
 	node_name = ros::this_node::getName();
-	depth_image = cv::Mat(480, 640, CV_16UC1, cv::Scalar(0, 0, 0));
+	depth_image = cv::Mat(IMG_HEIGHT, IMG_WIDTH, CV_16UC1, cv::Scalar(0, 0, 0));
+
+	get_msg();
 
 	// Publisher
 	pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("/l2d_pcl", 1);
@@ -200,7 +207,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 
 void LIDAR2Depth::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, PointCloudXYZRGB::Ptr cloud_out){
   //depth_image.setTo(cv::Scalar(0, 0, 0));
-  	depth_image = cv::Mat(480, 640, CV_16UC1, cv::Scalar(0, 0, 0));
+  	depth_image = cv::Mat(IMG_HEIGHT, IMG_WIDTH, CV_16UC1, cv::Scalar(0, 0, 0));
 	for(int i = 0; i < cloud_in->points.size(); i++){
 		float x;
 		float y;
@@ -213,12 +220,12 @@ void LIDAR2Depth::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, Poin
 				continue;
 			}
 			get_img_coordinate(x, y, img_z);
-			if (int(img_x) < 640 && int(img_y) < 480 && int(img_x) > 0 && int(img_y) > 0){
+			if (int(img_x) < IMG_WIDTH && int(img_y) < IMG_HEIGHT && int(img_x) > 0 && int(img_y) > 0){
 				cloud_out->points[i].r = 255;
 				cloud_out->points[i].g = 255;
 				cloud_out->points[i].b = 0;
 				
-				depth_image.at<signed short int>(480-int(img_y), 640-int(img_x)) = img_z*655;
+				depth_image.at<signed short int>(IMG_HEIGHT-int(img_y), IMG_WIDTH-int(img_x)) = img_z*655;
 			}
 		}
 
@@ -233,7 +240,7 @@ void LIDAR2Depth::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, Poin
 			continue;
 			}
 			get_img_coordinate(x, y, img_z);
-			if (int(img_x) < 640 && int(img_y) < 480 && int(img_x) >= 0 && int(img_y) >= 0){
+			if (int(img_x) < IMG_WIDTH && int(img_y) < IMG_HEIGHT && int(img_x) >= 0 && int(img_y) >= 0){
 				depth_image.at<float>(int(img_y), int(img_x)) = img_z;
 			}
 		}
@@ -257,6 +264,26 @@ void LIDAR2Depth::pcl_preprocess(PointCloudXYZRGB::Ptr cloud_out){
 	}
 }
 
+void LIDAR2Depth::get_msg(){
+  sensor_msgs::CameraInfo::ConstPtr msg;
+  bool get_camera_info = false;
+  while(!get_camera_info){
+    if(is_LIDAR){
+      msg = ros::topic::waitForMessage<sensor_msgs::CameraInfo>("/rgbd/rgb/camera_info",ros::Duration(10));
+      get_camera_info = true;
+    }
+    else{
+      msg = ros::topic::waitForMessage<sensor_msgs::CameraInfo>("/camera/color/camera_info",ros::Duration(10));
+      get_camera_info = true;
+    }
+  }
+  fx = msg->P[0];
+  fy = msg->P[5];
+  cx = msg->P[2];
+  cy = msg->P[6];
+  cout << fx << "," << fy << "," << cx << "," << cy << std::endl;
+return;
+}
 
 int main (int argc, char** argv)
 {

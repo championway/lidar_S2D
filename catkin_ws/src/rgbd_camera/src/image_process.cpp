@@ -23,6 +23,7 @@ Publish:
 #include <ros/console.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
@@ -34,6 +35,7 @@ Publish:
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <std_srvs/Trigger.h>
+#include "realsense2_camera/Extrinsics.h"
 //PCL lib
 #include <pcl/io/pcd_io.h>
 #include <pcl_ros/point_cloud.h>
@@ -104,12 +106,14 @@ private:
 	float img_x;
 	float img_y;
 	float img_z;
+	int IMG_WIDTH = 512;
+	int IMG_HEIGHT = 512;
 
 	// Gazebo
-	float fx = 554.254691191187;
-	float fy = 554.254691191187;
-	float cx = 320.5;
-	float cy = 240.5;
+	float fx;
+	float fy;
+	float cx;
+	float cy;
 
 	// LIDAR to CAMERA TF
 	//tf::TransformListener listener(ros::Duration(10));
@@ -120,6 +124,7 @@ private:
 
 public:
 	IMAGE_PROCESS(ros::NodeHandle&);
+	void get_msg();
 	void cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg);
 	void callback_sync(const sensor_msgs::PointCloud2ConstPtr&, const sensor_msgs::PointCloud2ConstPtr&, const sensor_msgs::ImageConstPtr&);
 	void get_img_coordinate(float, float, float);
@@ -130,15 +135,16 @@ public:
 
 IMAGE_PROCESS::IMAGE_PROCESS(ros::NodeHandle &n){
 	nh = n;
+	get_msg();
 	pcl_16_sub.subscribe(nh, "/velodyne_points_16", 1);
 	pcl_32_sub.subscribe(nh, "/velodyne_points_32", 1);
 	depth_sub.subscribe(nh, "/rgbd/depth/image_raw", 1);
 	sync_.reset(new Sync(MySyncPolicy(10), pcl_16_sub, pcl_32_sub, depth_sub));
 	sync_->registerCallback(boost::bind(&IMAGE_PROCESS::callback_sync, this, _1, _2, _3));
 	node_name = ros::this_node::getName();
-	out_img = cv::Mat(480, 640, CV_32FC1, cv::Scalar(0, 0, 0));
-	pcl_img_16 = cv::Mat(480, 640, CV_16UC1, cv::Scalar(0, 0, 0));
-	pcl_img_32 = cv::Mat(480, 640, CV_16UC1, cv::Scalar(0, 0, 0));
+	out_img = cv::Mat(IMG_HEIGHT, IMG_WIDTH, CV_32FC1, cv::Scalar(0, 0, 0));
+	pcl_img_16 = cv::Mat(IMG_HEIGHT, IMG_WIDTH, CV_16UC1, cv::Scalar(0, 0, 0));
+	pcl_img_32 = cv::Mat(IMG_HEIGHT, IMG_WIDTH, CV_16UC1, cv::Scalar(0, 0, 0));
 	SAVE_IMG = false;
 
 	// Publisher
@@ -192,8 +198,8 @@ void IMAGE_PROCESS::callback_sync(const sensor_msgs::PointCloud2ConstPtr& cloud_
 	pcl_ros::transformPointCloud(*cloud_lidar_32, *cloud_in_32, tf_lidar2cam_32);
 	copyPointCloud(*cloud_in_16, *cloud_out_16);
 	copyPointCloud(*cloud_in_32, *cloud_out_32);
-	pcl_img_16 = cv::Mat(480, 640, CV_16UC1, cv::Scalar(0, 0, 0));
-	pcl_img_32 = cv::Mat(480, 640, CV_16UC1, cv::Scalar(0, 0, 0));
+	pcl_img_16 = cv::Mat(IMG_HEIGHT, IMG_WIDTH, CV_16UC1, cv::Scalar(0, 0, 0));
+	pcl_img_32 = cv::Mat(IMG_HEIGHT, IMG_WIDTH, CV_16UC1, cv::Scalar(0, 0, 0));
 
 	for(int i = 0; i < cloud_in_16->points.size(); i++){
 		float x;
@@ -205,13 +211,13 @@ void IMAGE_PROCESS::callback_sync(const sensor_msgs::PointCloud2ConstPtr& cloud_
 			continue;
 		}
 		get_img_coordinate(x, y, img_z);
-		if (int(img_x) < 640 && int(img_y) < 480 && int(img_x) > 0 && int(img_y) > 0){
+		if (int(img_x) < IMG_WIDTH && int(img_y) < IMG_HEIGHT && int(img_x) > 0 && int(img_y) > 0){
 			cloud_out_16->points[i].r = 255;
 			cloud_out_16->points[i].g = 255;
 			cloud_out_16->points[i].b = 0;
 			// I change 32FC1 to 16UC1, so the image will become an integer matrix
 			// As a result, I scale up the pixel value just like D435
-			pcl_img_16.at<unsigned short int>(480-int(img_y), 640-int(img_x)) = img_z*655;
+			pcl_img_16.at<unsigned short int>(IMG_HEIGHT-int(img_y), IMG_WIDTH-int(img_x)) = img_z*655;
 		}
 	}
 
@@ -225,13 +231,13 @@ void IMAGE_PROCESS::callback_sync(const sensor_msgs::PointCloud2ConstPtr& cloud_
 			continue;
 		}
 		get_img_coordinate(x, y, img_z);
-		if (int(img_x) < 640 && int(img_y) < 480 && int(img_x) > 0 && int(img_y) > 0){
+		if (int(img_x) < IMG_WIDTH && int(img_y) < IMG_HEIGHT && int(img_x) > 0 && int(img_y) > 0){
 			cloud_out_32->points[i].r = 255;
 			cloud_out_32->points[i].g = 255;
 			cloud_out_32->points[i].b = 0;
 			// I change 32FC1 to 16UC1, so the image will become an integer matrix
 			// As a result, I scale up the pixel value just like D435
-			pcl_img_32.at<unsigned short int>(480-int(img_y), 640-int(img_x)) = img_z*655;
+			pcl_img_32.at<unsigned short int>(IMG_HEIGHT-int(img_y), IMG_WIDTH-int(img_x)) = img_z*655;
 		}
 	}
 
@@ -278,7 +284,7 @@ void IMAGE_PROCESS::get_img_coordinate(float x, float y,float z){
 
 void IMAGE_PROCESS::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, PointCloudXYZRGB::Ptr cloud_out){
   //depth_image.setTo(cv::Scalar(0, 0, 0));
-  	out_img = cv::Mat(480, 640, CV_32FC1, cv::Scalar(0, 0, 0));
+  	out_img = cv::Mat(IMG_HEIGHT, IMG_WIDTH, CV_32FC1, cv::Scalar(0, 0, 0));
 	for(int i = 0; i < cloud_in->points.size(); i++){
 		float x;
 		float y;
@@ -291,11 +297,11 @@ void IMAGE_PROCESS::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, Po
 				continue;
 			}
 			get_img_coordinate(x, y, img_z);
-			if (int(img_x) < 640 && int(img_y) < 480 && int(img_x) > 0 && int(img_y) > 0){
+			if (int(img_x) < IMG_WIDTH && int(img_y) < IMG_HEIGHT && int(img_x) > 0 && int(img_y) > 0){
 				cloud_out->points[i].r = 255;
 				cloud_out->points[i].g = 255;
 				cloud_out->points[i].b = 0;
-				out_img.at<float>(480-int(img_y), 640-int(img_x)) = img_z;
+				out_img.at<float>(IMG_HEIGHT-int(img_y), IMG_WIDTH-int(img_x)) = img_z;
 			}
 		}
 
@@ -310,7 +316,7 @@ void IMAGE_PROCESS::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, Po
 			continue;
 			}
 			get_img_coordinate(x, y, img_z);
-			if (int(img_x) < 640 && int(img_y) < 480 && int(img_x) > 0 && int(img_y) > 0){
+			if (int(img_x) < IMG_WIDTH && int(img_y) < IMG_HEIGHT && int(img_x) > 0 && int(img_y) > 0){
 				out_img.at<float>(int(img_y), int(img_x)) = img_z;
 			}
 		}
@@ -334,6 +340,26 @@ void IMAGE_PROCESS::pcl_preprocess(PointCloudXYZRGB::Ptr cloud_out){
 	}
 }
 
+void IMAGE_PROCESS::get_msg(){
+  sensor_msgs::CameraInfo::ConstPtr msg;
+  bool get_camera_info = false;
+  while(!get_camera_info){
+    if(is_LIDAR){
+      msg = ros::topic::waitForMessage<sensor_msgs::CameraInfo>("/rgbd/rgb/camera_info",ros::Duration(10));
+      get_camera_info = true;
+    }
+    else{
+      msg = ros::topic::waitForMessage<sensor_msgs::CameraInfo>("/camera/color/camera_info",ros::Duration(10));
+      get_camera_info = true;
+    }
+  }
+  fx = msg->P[0];
+  fy = msg->P[5];
+  cx = msg->P[2];
+  cy = msg->P[6];
+  cout << fx << "," << fy << "," << cx << "," << cy << std::endl;
+return;
+}
 
 int main (int argc, char** argv)
 {
