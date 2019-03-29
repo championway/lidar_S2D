@@ -403,7 +403,7 @@
                     topic="/velodyne_points_16" 
                     hz="10" 
                     samples="1875"
-                    min_range="0" 
+                    min_range="0.5" 
                     max_range="100.0"
                     noise="0.01"
                     gpu="true">
@@ -418,7 +418,7 @@
                     topic="/velodyne_points_32" 
                     hz="10" 
                     samples="2187" 
-                    min_range="0" 
+                    min_range="0.5" 
                     max_range="100.0"
                     noise="0.01"
                     gpu="true">
@@ -430,13 +430,13 @@
   <xacro:if value="true">
   <xacro:include filename="$(find robot_sensors)/urdf/rgbd_camera.xacro"/>
     <xacro:rgbd_camera  name="rgbd" 
-                        width="640" 
-                        height="480" 
+                        width="512" 
+                        height="512" 
                         update_rate="20"
-                        min_distance="0.05"
+                        min_distance="0.5"
                         max_distance="100.0"
-                        pointCloudCutoff="0.6"
-                        pointCloudCutoffMax="100"/>
+                        pointCloudCutoff="0.5"
+                        pointCloudCutoffMax="100.0"/>
     <joint name="rgbd_camera_mount_joint" type="fixed">
       <origin xyz="0.3 0 0.62" rpy="0 0.0 0"/>
       <parent link="base_link"/>
