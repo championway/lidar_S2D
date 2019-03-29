@@ -1,5 +1,7 @@
 # lidar_S2D - LIDAR Point Cloud from Sparse to Dense
 
+![32 Bin LIDAR Point Cloud From Sparse To Dense](https://github.com/championway/lidar_S2D/blob/master/image/simple_demo.gif)
+
 # Development Environment
 - Ubuntu 16.04
 - [ROS kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
