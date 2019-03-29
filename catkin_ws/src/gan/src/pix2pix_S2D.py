@@ -31,11 +31,11 @@ parser.add_argument('--b1', type=float, default=0.5, help='adam: decay of first 
 parser.add_argument('--b2', type=float, default=0.999, help='adam: decay of first order momentum of gradient')
 parser.add_argument('--decay_epoch', type=int, default=100, help='epoch from which to start lr decay')
 parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads to use during batch generation')
-parser.add_argument('--img_height', type=int, default=256, help='size of image height')
-parser.add_argument('--img_width', type=int, default=256, help='size of image width')
+parser.add_argument('--img_height', type=int, default=512, help='size of image height')
+parser.add_argument('--img_width', type=int, default=512, help='size of image width')
 parser.add_argument('--channels', type=int, default=1, help='number of image channels')
 parser.add_argument('--sample_interval', type=int, default=200, help='interval between sampling of images from generators')
-parser.add_argument('--checkpoint_interval', type=int, default=2, help='interval between model checkpoints')
+parser.add_argument('--checkpoint_interval', type=int, default=5, help='interval between model checkpoints')
 opt = parser.parse_args()
 print(opt)
 
@@ -92,7 +92,7 @@ dataloader = DataLoader(ImageDataset(root, transforms_=transforms_B, mode='train
                         batch_size=opt.batch_size, shuffle=True, num_workers=opt.n_cpu)
 
 val_dataloader = DataLoader(ImageDataset(root, transforms_=transforms_B, mode='test'),
-                            batch_size=10, shuffle=True, num_workers=1)
+                            batch_size=2, shuffle=True, num_workers=1)
 
 # Tensor type
 Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
@@ -103,8 +103,8 @@ def sample_images(batches_done):
     real_A = Variable(imgs['B'].type(Tensor))
     real_B = Variable(imgs['A'].type(Tensor))
     fake_B = generator(real_A)
-    img_sample = torch.cat((real_A.data, fake_B.data, real_B.data), -2)
-    save_image(img_sample, root + 'result/' + 'images/%s/%s.png' % (opt.dataset_name, batches_done), nrow=5, normalize=True)
+    img_sample = torch.cat((real_A.data, fake_B.data, real_B.data), -1)
+    save_image(img_sample, root + 'result/' + 'images/%s/%s.png' % (opt.dataset_name, batches_done), nrow=1, normalize=True)
 
 # ----------
 #  Training
@@ -131,7 +131,7 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
         # GAN loss
         fake_B = generator(real_A)
-        print(real_B.max(), fake_B.max())
+        print('\n', real_B.max().item(), fake_B.max().item(), real_B.min().item(), real_B.min().item())
 
         # Key points
         '''key_points_A = []

@@ -25,11 +25,11 @@ class ImageDataset(Dataset):
         B_path = os.path.join(self.root, self.B_folder, self.files[idx] + ".png")
         img_A = Image.open(A_path)
         img_B = Image.open(B_path)
-        img_A = np.array(img_A)/655.
+        img_A = np.array(img_A)/655
         img_B = np.array(img_B)/655.
 
-        img_A = cv2.resize(img_A, (256, 256))
-        img_B = cv2.resize(img_B, (256, 256))
+        #img_A = cv2.resize(img_A, (512, 512))
+        #img_B = cv2.resize(img_B, (512, 512))
 
         #img_A = Image.fromarray(img_A)
         #img_B = Image.fromarray(img_B)
