@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   tf_conversions
+  s2d_msgs
   ddynamic_reconfigure
 )
 

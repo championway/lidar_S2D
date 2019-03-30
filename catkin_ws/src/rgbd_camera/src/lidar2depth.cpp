@@ -44,6 +44,9 @@ Publish:
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 #include <tf_conversions/tf_eigen.h>
+//S2D Msgs
+#include <s2d_msgs/S2D_ImageList.h>
+#include <s2d_msgs/S2D_Image.h>
 
 //OpenCV lib
 #include <opencv/cv.h>
@@ -76,6 +79,7 @@ private:
 	ros::Subscriber sub_cloud;
 	ros::Publisher  pub_cloud;
 	ros::Publisher  pub_image;
+	ros::Publisher  pub_data;
 
 	// Camera information
 	// D435
@@ -123,6 +127,7 @@ LIDAR2Depth::LIDAR2Depth(ros::NodeHandle &n){
 	// Publisher
 	pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("/l2d_pcl", 1);
 	pub_image = nh.advertise<sensor_msgs::Image> ("/l2d_img", 1);
+	pub_data  = nh.advertise<s2d_msgs::S2D_ImageList> ("/l2d_data", 1);
 
 	// Subscriber
 	if(is_LIDAR){
@@ -189,13 +194,24 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	clock_t t_end = clock();
 	//cout << "PointCloud preprocess time taken = " << (t_end-t_start)/(double)(CLOCKS_PER_SEC) << endl;
 
-	// PUblish image
-	//std::cout << result.cols << ',' << result.rows << std::endl;
+	// Publish image
 	cvIMG.header = cloud_msg->header;
 	cvIMG.encoding = sensor_msgs::image_encodings::TYPE_16UC1;
 	cvIMG.image = depth_image;
 	//img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", depth_image).toImageMsg();
 	pub_image.publish(cvIMG.toImageMsg());
+
+	s2d_msgs::S2D_ImageList s2d_data;
+	s2d_msgs::S2D_Image s2d_img;
+	s2d_data.header = cloud_msg->header;
+	s2d_img.img = *cvIMG.toImageMsg();
+	s2d_img.fx = fx;
+	s2d_img.fy = fy;
+	s2d_img.cx = cx;
+	s2d_img.cy = cy;
+	s2d_data.list.push_back(s2d_img);
+	s2d_data.size = s2d_data.list.size();
+	pub_data.publish(s2d_data);
 
 	// Publish point cloud
 	sensor_msgs::PointCloud2 pcl_output;
@@ -288,6 +304,7 @@ return;
 int main (int argc, char** argv)
 {
 	ros::init (argc, argv, "LIDAR2Depth");
+	ROS_INFO("[%s] Start Runnig", ros::this_node::getName().c_str());
 	ros::NodeHandle nh("~");
 	LIDAR2Depth pn(nh);
 	ros::spin ();
