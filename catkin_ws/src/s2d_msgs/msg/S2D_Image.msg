@@ -1,5 +1,6 @@
 sensor_msgs/Image img
-float32 fx
-float32 fy
-float32 cx
-float32 cy
+float64 fx
+float64 fy
+float64 cx
+float64 cy
+float64[16] transform_matrix

@@ -178,19 +178,47 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 		pcl::fromROSMsg (*cloud_msg, *cloud_XYZ);
 		copyPointCloud(*cloud_XYZ, *cloud_lidar);
 		//std::cout<<tf_lidar2cam.getOrigin().x()<<"," <<tf_lidar2cam.getOrigin().y()<<","<<tf_lidar2cam.getOrigin().z()<<std::endl;
-		pcl_ros::transformPointCloud(*cloud_lidar, *cloud_in, tf_lidar2cam);
+		pcl_ros::transformPointCloud(*cloud_lidar, *cloud_lidar, tf_lidar2cam);
 	}
 	else{
 		pcl::fromROSMsg (*cloud_msg, *cloud_XYZRGB);
 		copyPointCloud(*cloud_XYZRGB, *cloud_in);
 	}
-	copyPointCloud(*cloud_in, *cloud_out);
 
 	// Remove out of range points and robot points
 	//pcl_preprocess(cloud_out);
 	
 	//cv::Mat depth_image(480, 640, CV_32FC1, cv::Scalar(0, 0, 0));
-	pointcloud_to_image(cloud_in, cloud_out);
+	s2d_msgs::S2D_ImageList s2d_data;
+
+	float theta = 60*M_PI/180.0;;
+	for (int i = 0; i < 6; i++){
+		Eigen::Matrix4f transform_matrix = Eigen::Matrix4f::Identity();
+		transform_matrix(0, 0) = cos(theta*i);
+		transform_matrix(0, 1) = -sin(theta*i);
+		transform_matrix(1, 0) = sin(theta*i);
+		transform_matrix(1, 1) = cos(theta*i);
+		pcl::transformPointCloud(*cloud_lidar, *cloud_in, transform_matrix);
+		copyPointCloud(*cloud_in, *cloud_out);
+		pointcloud_to_image(cloud_in, cloud_out);
+
+		s2d_msgs::S2D_Image s2d_img;
+		for (int n = 0; n < 4; n++){
+			for (int m = 0; m < 4; m++){
+				s2d_img.transform_matrix[4*n + m] = transform_matrix(n,m);
+			}
+		}
+		s2d_img.fx = fx;
+		s2d_img.fy = fy;
+		s2d_img.cx = cx;
+		s2d_img.cy = cy;
+		cvIMG.header = cloud_msg->header;
+		cvIMG.encoding = sensor_msgs::image_encodings::TYPE_16UC1;
+		cvIMG.image = depth_image;
+		s2d_img.img = *cvIMG.toImageMsg();
+		s2d_data.list.push_back(s2d_img);
+	}
+
 	clock_t t_end = clock();
 	//cout << "PointCloud preprocess time taken = " << (t_end-t_start)/(double)(CLOCKS_PER_SEC) << endl;
 
@@ -201,15 +229,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	//img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", depth_image).toImageMsg();
 	pub_image.publish(cvIMG.toImageMsg());
 
-	s2d_msgs::S2D_ImageList s2d_data;
-	s2d_msgs::S2D_Image s2d_img;
 	s2d_data.header = cloud_msg->header;
-	s2d_img.img = *cvIMG.toImageMsg();
-	s2d_img.fx = fx;
-	s2d_img.fy = fy;
-	s2d_img.cx = cx;
-	s2d_img.cy = cy;
-	s2d_data.list.push_back(s2d_img);
 	s2d_data.size = s2d_data.list.size();
 	pub_data.publish(s2d_data);
 
@@ -240,7 +260,6 @@ void LIDAR2Depth::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, Poin
 				cloud_out->points[i].r = 255;
 				cloud_out->points[i].g = 255;
 				cloud_out->points[i].b = 0;
-				
 				depth_image.at<signed short int>(IMG_HEIGHT-int(img_y), IMG_WIDTH-int(img_x)) = img_z*655;
 			}
 		}
@@ -265,7 +284,6 @@ void LIDAR2Depth::pointcloud_to_image(const PointCloudXYZRGB::Ptr cloud_in, Poin
 		//free(y);
 		//free(z);
 	}
-	//return depth_image;
 }
 
 void LIDAR2Depth::pcl_preprocess(PointCloudXYZRGB::Ptr cloud_out){

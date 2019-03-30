@@ -16,7 +16,7 @@ from nav_msgs.msg import Path
 from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import Header
 import message_filters
-
+from s2d_msgs.msg import S2D_Image, S2D_ImageList
 import os
 import math
 import time
@@ -46,7 +46,7 @@ class SPARSE2DENSE():
 												  PIL.Image.BICUBIC),
 												  transforms.ToTensor()])
 		#-------point cloud without color-------
-		self.depth_sub = rospy.Subscriber("/l2d_img", Image, self.img_cb, queue_size = 1, buff_size = 2**24)
+		self.data_sub = rospy.Subscriber("/l2d_data", S2D_ImageList, self.data_cb, queue_size = 1, buff_size = 2**24)
 		#self.depth_sub = rospy.Subscriber("/X1/rgbd_camera/depth/image_raw", Image, self.img_cb, queue_size = 1, buff_size = 2**24)
 		#------------------------------------
 
@@ -59,6 +59,7 @@ class SPARSE2DENSE():
 
 		#self.pc_pub = rospy.Publisher("/pointcloud2_transformed", PointCloud2, queue_size=1)
 		self.image_pub = rospy.Publisher("/gan_img", Image, queue_size = 1)
+		self.data_pub = rospy.Publisher("/gan_data", S2D_ImageList, queue_size = 1)
 		self.points = []
 		rospy.loginfo("Start Generating depth image")
 		# self.cv_depthimage = cv2.imread('/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/depth_655/img_366.png', cv2.IMREAD_ANYDEPTH)
@@ -68,10 +69,20 @@ class SPARSE2DENSE():
 		# 	self.image_pub.publish(self.bridge.cv2_to_imgmsg(self.cv_depthimage, "16SC1"))
 		# 	rospy.sleep(0.5)
 
-	def img_cb(self, depth_data):
-		self.cv_depthimage = self.bridge.imgmsg_to_cv2(depth_data, "16UC1")
-		self.generate_image()
+	def data_cb(self, msg):
+		s2d_data = S2D_ImageList()
+		prev_time = time.time()
+		for i in range(msg.size):
+			s2d_img = S2D_Image()
+			s2d_img = msg.list[i]
+			self.cv_depthimage = self.bridge.imgmsg_to_cv2(msg.list[i].img, "16UC1")
+			self.generate_image()
+			s2d_img.img = self.bridge.cv2_to_imgmsg(self.generate_img, "16UC1")
+			s2d_data.list.append(s2d_img)
+		s2d_data.size = len(s2d_data.list)
 		self.image_pub.publish(self.bridge.cv2_to_imgmsg(self.generate_img, "16UC1"))
+		self.data_pub.publish(s2d_data)
+		print("Hz: ", 1./(time.time() - prev_time))
 
 	def generate_image(self):
 		prev_time = time.time()
@@ -107,7 +118,7 @@ class SPARSE2DENSE():
 		pil = pil.astype(np.uint16)
 		#cv2.imwrite('sss.png', pil/655.)
 		self.generate_img = pil
-		self.mask_dilate()
+		#self.mask_dilate()
 		#print("Hz: ", 1./(time.time() - prev_time))
 	def mask_dilate(self):
 		mask = np.zeros(self.generate_img.shape, np.uint8)
