@@ -26,6 +26,7 @@ class SetGAZEBO():
 		self.distance_range = (2, 25)
 		self.yaw_range = (0, 360)
 		self.counter = 0
+		self.object_list = ['euro_pallet', 'euro_pallet_0', 'first_2015_trash_can', 'follower_vehicle', 'Mailbox']
 		while(True):
 			self.set_gazebo_pose()
 			rospy.sleep(2)
@@ -34,6 +35,7 @@ class SetGAZEBO():
 
 	def set_gazebo_pose(self):
 		try:
+			position_list = []
 			rospy.wait_for_service("/gazebo/set_model_state")
 			self.robot_state.model_name = "bot"
 			self.robot_state.pose.position.x = 0
@@ -41,20 +43,21 @@ class SetGAZEBO():
 			self.robot_state.pose.position.z = 0
 			rad = self.set_gazebo_srv(self.robot_state)
 
-			degree, r, quat = self.get_pose()
-			self.state.model_name = "unit_cylinder"
-			p_cylinder = [r * np.cos(np.radians(degree)), r * np.sin(np.radians(degree))]
-			self.set_pose(p_cylinder, quat)
-			ret = self.set_gazebo_srv(self.state)
+			for obj in self.object_list:
+				self.state.model_name = obj
+				too_close = True
+				p = None
+				while too_close:
+					too_close = False
+					degree, r, quat = self.get_pose(self.theta_range, self.distance_range, self.yaw_range)
+					p = [r * np.cos(np.radians(degree)), r * np.sin(np.radians(degree))]
+					for pos in position_list:
+						if self.distanse(p, pos) < 3:
+							too_close = True
+				position_list.append(p)
+				self.set_pose(p, quat)
+				ret = self.set_gazebo_srv(self.state)
 
-			degree, r, quat = self.get_pose()
-			p_box = [r * np.cos(np.radians(degree)), r * np.sin(np.radians(degree))]
-			while(self.distanse(p_cylinder, p_box)) < 2:
-				degree, r, quat = self.get_pose()
-				p_box = [r * np.cos(np.radians(degree)), r * np.sin(np.radians(degree))]
-			self.state.model_name = "unit_box"
-			self.set_pose(p_box, quat)
-			ret = self.set_gazebo_srv(self.state)
 			rospy.loginfo("Send service: " + str(self.counter))
 			self.counter = self.counter + 1
 
@@ -70,10 +73,10 @@ class SetGAZEBO():
 		self.state.pose.orientation.z = q[2]
 		self.state.pose.orientation.w = q[3]
 
-	def get_pose(self):
-		degree = random.randint(self.theta_range[0]*100, self.theta_range[1]*100)/100.
-		r = random.randint(self.distance_range[0]*100, self.distance_range[1]*100)/100.
-		yaw = random.randint(self.yaw_range[0]*100, self.yaw_range[1]*100)/100.
+	def get_pose(self, theta_range, distance_range, yaw_range):
+		degree = random.randint(theta_range[0]*100, theta_range[1]*100)/100.
+		r = random.randint(distance_range[0]*100, distance_range[1]*100)/100.
+		yaw = random.randint(yaw_range[0]*100, yaw_range[1]*100)/100.
 		quat = tf.transformations.quaternion_from_euler(0, 0, yaw)
 		return degree, r, quat
 
