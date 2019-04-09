@@ -81,12 +81,7 @@ private:
 	ros::Publisher  pub_image;
 	ros::Publisher  pub_data;
 
-	// Camera information
-	// D435
-	/*loat fx = 614.4776611328125;
-	float fy = 614.2581176757812;
-	float cx = 320.2654724121094;
-	float cy = 249.4024658203125;*/
+	
 
 	// Information
 	float img_x;
@@ -95,17 +90,24 @@ private:
 	int IMG_WIDTH = 512;
 	int IMG_HEIGHT = 512;
 
-	// Gazebo
+	/*// Gazebo
 	float fx;
 	float fy;
 	float cx;
-	float cy;
+	float cy;*/
+
+	// Camera information
+	float fx = 443.4037529529496;
+	float fy = 443.4037529529496;
+	float cx = 256.5;
+	float cy = 256.5;
 
 	// LIDAR to CAMERA TF
 	//tf::TransformListener listener(ros::Duration(10));
 	bool get_tf = false;
 	tf::TransformListener lr;
 	tf::StampedTransform tf_lidar2cam;
+	Eigen::Matrix4f static_tf;
 
 public:
 	LIDAR2Depth(ros::NodeHandle&);
@@ -122,7 +124,14 @@ LIDAR2Depth::LIDAR2Depth(ros::NodeHandle &n){
 	node_name = ros::this_node::getName();
 	depth_image = cv::Mat(IMG_HEIGHT, IMG_WIDTH, CV_16UC1, cv::Scalar(0, 0, 0));
 
-	get_msg();
+	//get_msg();
+
+	static_tf = Eigen::Matrix4f::Identity();
+	float theta = M_PI/2.0;
+	static_tf(0,0) = cos(theta);
+	static_tf(0,1) = -sin(theta);
+	static_tf(1,0) = sin(theta);
+	static_tf(1,1) = cos(theta);
 
 	// Publisher
 	pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("/l2d_pcl", 1);
@@ -145,7 +154,7 @@ void LIDAR2Depth::get_img_coordinate(float x, float y,float z){
 }
 
 void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
-	if(!get_tf){
+	/*if(!get_tf){
 		try{
 			lr.lookupTransform("/rgbd_link", "/velodyne_32",
 									ros::Time(0), tf_lidar2cam);
@@ -156,7 +165,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 			ros::Duration(1.0).sleep();
 		}
 		return;
-	}
+	}*/
 
 	frame_id = cloud_msg->header.frame_id;
 	counts++;
@@ -178,7 +187,8 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 		pcl::fromROSMsg (*cloud_msg, *cloud_XYZ);
 		copyPointCloud(*cloud_XYZ, *cloud_lidar);
 		//std::cout<<tf_lidar2cam.getOrigin().x()<<"," <<tf_lidar2cam.getOrigin().y()<<","<<tf_lidar2cam.getOrigin().z()<<std::endl;
-		pcl_ros::transformPointCloud(*cloud_lidar, *cloud_lidar, tf_lidar2cam);
+		//pcl_ros::transformPointCloud(*cloud_lidar, *cloud_lidar, tf_lidar2cam);
+		//pcl::transformPointCloud(*cloud_lidar, *cloud_lidar, static_tf);
 	}
 	else{
 		pcl::fromROSMsg (*cloud_msg, *cloud_XYZRGB);
@@ -192,7 +202,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	s2d_msgs::S2D_ImageList s2d_data;
 
 	float theta = 60*M_PI/180.0;;
-	for (int i = 0; i < 6; i++){
+	for (int i = 0; i < 1; i++){
 		Eigen::Matrix4f transform_matrix = Eigen::Matrix4f::Identity();
 		transform_matrix(0, 0) = cos(theta*i);
 		transform_matrix(0, 1) = -sin(theta*i);
@@ -237,7 +247,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	sensor_msgs::PointCloud2 pcl_output;
 	pcl::toROSMsg(*cloud_out, pcl_output);
 	pcl_output.header = cloud_msg->header;
-	pcl_output.header.frame_id = "/rgbd_link";
+	pcl_output.header.frame_id = "/velodyne";
 	pub_cloud.publish(pcl_output);
 }
 
