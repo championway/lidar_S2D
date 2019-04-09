@@ -24,7 +24,7 @@ import torch
 parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='epoch to start training from')
 parser.add_argument('--n_epochs', type=int, default=300, help='number of epochs of training')
-parser.add_argument('--dataset_name', type=str, default="S2D", help='name of the dataset')
+parser.add_argument('--dataset_name', type=str, default="S2D_16", help='name of the dataset')
 parser.add_argument('--batch_size', type=int, default=1, help='size of the batches')
 parser.add_argument('--lr', type=float, default=0.0002, help='adam: learning rate')
 parser.add_argument('--b1', type=float, default=0.5, help='adam: decay of first order momentum of gradient')
@@ -35,7 +35,8 @@ parser.add_argument('--img_height', type=int, default=512, help='size of image h
 parser.add_argument('--img_width', type=int, default=512, help='size of image width')
 parser.add_argument('--channels', type=int, default=1, help='number of image channels')
 parser.add_argument('--sample_interval', type=int, default=200, help='interval between sampling of images from generators')
-parser.add_argument('--checkpoint_interval', type=int, default=5, help='interval between model checkpoints')
+parser.add_argument('--checkpoint_interval', type=int, default=10, help='interval between model checkpoints')
+parser.add_argument('--pretrained', type=bool, default=True, help='Use pretrained model or not')
 opt = parser.parse_args()
 print(opt)
 
@@ -68,10 +69,10 @@ if cuda:
     criterion_GAN.cuda()
     criterion_pixelwise.cuda()
 
-if opt.epoch != 0:
+if opt.pretrained:
     # Load pretrained models
-    generator.load_state_dict(torch.load('saved_models/%s/generator_%d.pth' % (opt.dataset_name, opt.epoch)))
-    discriminator.load_state_dict(torch.load('saved_models/%s/discriminator_%d.pth' % (opt.dataset_name, opt.epoch)))
+    generator.load_state_dict(torch.load('/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/result/saved_models/S2D/generator_295.pth'))
+    discriminator.load_state_dict(torch.load('/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/result/saved_models/S2D/discriminator_295.pth'))
 else:
     # Initialize weights
     generator.apply(weights_init_normal)

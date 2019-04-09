@@ -10,7 +10,7 @@ import torchvision.transforms as transforms
 import cv2
 
 class ImageDataset(Dataset):
-    def __init__(self, root, transforms_=None, A_folder = 'depth', B_folder = 'pcl_32', mode='train'):
+    def __init__(self, root, transforms_=None, A_folder = 'depth', B_folder = 'pcl_16', mode='train'):
         self.transform = transforms.Compose(transforms_)
         self.root = root
         self.files = []
