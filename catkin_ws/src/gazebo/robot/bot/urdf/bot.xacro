@@ -407,7 +407,7 @@
                     max_range="100.0"
                     noise="0.01"
                     gpu="true">
-      <origin xyz="0.3 0 0.5" rpy="0 0 0" />
+      <origin xyz="0.1 0 0.3" rpy="0 0 0" />
     </xacro:VLP-16>
   </xacro:if>
 
@@ -422,7 +422,7 @@
                     max_range="100.0"
                     noise="0.01"
                     gpu="true">
-        <origin xyz="0.3 0 0.35" rpy="0 0 -1.57" />
+        <origin xyz="0.1 0 0.15" rpy="0 0 -1.57" />
     </xacro:HDL-32E>
   </xacro:if>
 
@@ -438,7 +438,7 @@
                         pointCloudCutoff="0.5"
                         pointCloudCutoffMax="100.0"/>
     <joint name="rgbd_camera_mount_joint" type="fixed">
-      <origin xyz="0.3 0 0.62" rpy="0 0.0 0"/>
+      <origin xyz="0.1 0 0.42" rpy="0 0.0 0"/>
       <parent link="base_link"/>
       <child link="rgbd_link"/>
     </joint>
