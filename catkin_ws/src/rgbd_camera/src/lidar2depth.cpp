@@ -131,7 +131,7 @@ LIDAR2Depth::LIDAR2Depth(ros::NodeHandle &n){
 
 	// Subscriber
 	if(is_LIDAR){
-		sub_cloud = nh.subscribe("/velodyne_points_32", 1, &LIDAR2Depth::cbCloud, this);
+		sub_cloud = nh.subscribe("/velodyne_points", 1, &LIDAR2Depth::cbCloud, this);
 	}
 	else{
 		sub_cloud = nh.subscribe("/X1/rgbd_camera/depth/points", 1, &LIDAR2Depth::cbCloud, this);

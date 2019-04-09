@@ -22,14 +22,17 @@ class SetGAZEBO():
 		self.state = ModelState()
 		self.robot_state = ModelState()
 		self.set_model_state = SetModelState()
-		self.theta_range = (-28, 28)
-		self.distance_range = (2, 25)
+		self.theta_range = (-90, 90)
+		self.distance_range = (3, 7.5)
 		self.yaw_range = (0, 360)
 		self.counter = 0
-		self.object_list = ['euro_pallet', 'euro_pallet_0', 'first_2015_trash_can', 'follower_vehicle', 'Mailbox']
+		self.object_list = ['person_walking', 'person_walking_clone', 'person_walking_clone_0', 'person_walking_clone_1',\
+							'person_walking_clone_2', 'person_walking_clone_3', 'person_walking_clone_4',\
+							'person_standing', 'person_standing_clone', 'person_standing_clone_0', 'person_standing_clone_1'\
+							, 'person_standing_clone_2']
 		while(True):
 			self.set_gazebo_pose()
-			rospy.sleep(2)
+			rospy.sleep(2.5)
 			self.save_image()
 			rospy.sleep(1.5)
 
@@ -38,9 +41,15 @@ class SetGAZEBO():
 			position_list = []
 			rospy.wait_for_service("/gazebo/set_model_state")
 			self.robot_state.model_name = "bot"
-			self.robot_state.pose.position.x = 0
-			self.robot_state.pose.position.y = 0
-			self.robot_state.pose.position.z = 0
+			degree, r, q = self.get_pose((-90, 90), (1, 6), (-90, 90))
+			p = [r * np.cos(np.radians(degree)), r * np.sin(np.radians(degree))]
+			self.robot_state.pose.position.x = 2.25
+			self.robot_state.pose.position.y = 0.5
+			self.robot_state.pose.position.z = 0.1
+			self.robot_state.pose.orientation.x = q[0]
+			self.robot_state.pose.orientation.y = q[1]
+			self.robot_state.pose.orientation.z = q[2]
+			self.robot_state.pose.orientation.w = q[3]
 			rad = self.set_gazebo_srv(self.robot_state)
 
 			for obj in self.object_list:
@@ -52,7 +61,7 @@ class SetGAZEBO():
 					degree, r, quat = self.get_pose(self.theta_range, self.distance_range, self.yaw_range)
 					p = [r * np.cos(np.radians(degree)), r * np.sin(np.radians(degree))]
 					for pos in position_list:
-						if self.distanse(p, pos) < 3:
+						if self.distanse(p, pos) < 1:
 							too_close = True
 				position_list.append(p)
 				self.set_pose(p, quat)
