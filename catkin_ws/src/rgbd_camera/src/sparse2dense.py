@@ -38,7 +38,7 @@ class SPARSE2DENSE():
 		self.generator = GeneratorUNet(in_channels=1, out_channels=1)
 		if self.cuda:
 			self.generator = self.generator.cuda()
-		self.generator.load_state_dict(torch.load('/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/result/saved_models/S2D_16/generator_210.pth'))
+		self.generator.load_state_dict(torch.load('/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/result/saved_models/S2D_16/generator_180.pth'))
 		self.cv_depthimage = None
 		self.generate_img = None
 		self.Tensor = torch.cuda.FloatTensor if self.cuda else torch.FloatTensor

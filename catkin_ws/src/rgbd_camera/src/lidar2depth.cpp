@@ -140,7 +140,7 @@ LIDAR2Depth::LIDAR2Depth(ros::NodeHandle &n){
 
 	// Subscriber
 	if(is_LIDAR){
-		sub_cloud = nh.subscribe("/velodyne_points", 1, &LIDAR2Depth::cbCloud, this);
+		sub_cloud = nh.subscribe("/velodyne_points_16", 1, &LIDAR2Depth::cbCloud, this);
 	}
 	else{
 		sub_cloud = nh.subscribe("/X1/rgbd_camera/depth/points", 1, &LIDAR2Depth::cbCloud, this);
@@ -202,7 +202,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	s2d_msgs::S2D_ImageList s2d_data;
 
 	float theta = 60*M_PI/180.0;;
-	for (int i = 0; i < 1; i++){
+	for (int i = 0; i < 3; i++){
 		Eigen::Matrix4f transform_matrix = Eigen::Matrix4f::Identity();
 		transform_matrix(0, 0) = cos(theta*i);
 		transform_matrix(0, 1) = -sin(theta*i);
@@ -247,7 +247,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	sensor_msgs::PointCloud2 pcl_output;
 	pcl::toROSMsg(*cloud_out, pcl_output);
 	pcl_output.header = cloud_msg->header;
-	pcl_output.header.frame_id = "/velodyne";
+	pcl_output.header.frame_id = "/velodyne_16";
 	pub_cloud.publish(pcl_output);
 }
 

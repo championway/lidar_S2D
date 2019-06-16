@@ -120,7 +120,7 @@ void DEPTH2LIDAR::callback(const s2d_msgs::S2D_ImageListConstPtr& msg){
   sensor_msgs::PointCloud2 object_cloud_msg;
   toROSMsg(*pc, object_cloud_msg);
   if(is_gazebo){
-    object_cloud_msg.header.frame_id = "/velodyne";
+    object_cloud_msg.header.frame_id = "/velodyne_16";
   }
   else{
     object_cloud_msg.header.frame_id = "camera_color_optical_frame";
