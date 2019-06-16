@@ -48,7 +48,7 @@ $ source environment.sh
 $ roslaunch gazebo_run test.launch
 ```
 
-## Colllect LIDAR depth image 
+## Collect LIDAR depth image 
 ```
 $ rosrun rgbd_camera image_process
 ```
