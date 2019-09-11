@@ -118,7 +118,7 @@ class SPARSE2DENSE():
 		pil = pil.astype(np.uint16)
 		#cv2.imwrite('sss.png', pil/655.)
 		self.generate_img = pil
-		#self.mask_dilate()
+		self.mask_dilate()
 		#print("Hz: ", 1./(time.time() - prev_time))
 	def mask_dilate(self):
 		mask = np.zeros(self.generate_img.shape, np.uint8)
