@@ -73,6 +73,7 @@ private:
 
 	// Counter
 	int counts;
+	int frame_num = 1;
 
 	// for ROS
 	ros::NodeHandle nh;
@@ -202,7 +203,7 @@ void LIDAR2Depth::cbCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_msg){
 	s2d_msgs::S2D_ImageList s2d_data;
 
 	float theta = 60*M_PI/180.0;;
-	for (int i = 0; i < 3; i++){
+	for (int i = 0; i < frame_num; i++){
 		Eigen::Matrix4f transform_matrix = Eigen::Matrix4f::Identity();
 		transform_matrix(0, 0) = cos(theta*i);
 		transform_matrix(0, 1) = -sin(theta*i);
