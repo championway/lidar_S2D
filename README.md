@@ -53,12 +53,19 @@ $ roslaunch gazebo_run test.launch
 $ rosrun rgbd_camera image_process
 ```
 
-## LIDAR point cloud to depth image 
+## Predict point cloud sparse to dense
+
+### LIDAR point cloud to depth image 
 ```
 $ rosrun rgbd_camera lidar2depth
 ```
 
-## Depth image to LIDAR point cloud
+### Depth image to LIDAR point cloud
 ```
 $ rosrun rgbd_camera depth2lidar
+```
+
+### GAN prediction
+```
+$ rosrun rgbd_camera sparse2nse.py
 ```
