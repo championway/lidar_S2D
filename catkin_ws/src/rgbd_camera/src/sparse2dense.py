@@ -38,7 +38,7 @@ class SPARSE2DENSE():
 		self.generator = GeneratorUNet(in_channels=1, out_channels=1)
 		if self.cuda:
 			self.generator = self.generator.cuda()
-		self.generator.load_state_dict(torch.load('/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/result/saved_models/S2D_16/generator_180.pth'))
+		self.generator.load_state_dict(torch.load('/media/arg_ws3/5E703E3A703E18EB/research/lidar_S2D/result/saved_models/S2D_16/generator_290.pth'))
 		self.cv_depthimage = None
 		self.generate_img = None
 		self.Tensor = torch.cuda.FloatTensor if self.cuda else torch.FloatTensor
@@ -76,6 +76,8 @@ class SPARSE2DENSE():
 			s2d_img = S2D_Image()
 			s2d_img = msg.list[i]
 			self.cv_depthimage = self.bridge.imgmsg_to_cv2(msg.list[i].img, "16UC1")
+			cv2.imwrite('gray.png', self.cv_depthimage)
+			# print(max(self.cv_depthimage[self.cv_depthimage!=0])/655.)
 			self.generate_image()
 			s2d_img.img = self.bridge.cv2_to_imgmsg(self.generate_img, "16UC1")
 			s2d_data.list.append(s2d_img)
@@ -118,6 +120,7 @@ class SPARSE2DENSE():
 		pil = pil.astype(np.uint16)
 		#cv2.imwrite('sss.png', pil/655.)
 		self.generate_img = pil
+		# cv2.imwrite('gray.png', self.generate_img)
 		self.mask_dilate()
 		#print("Hz: ", 1./(time.time() - prev_time))
 	def mask_dilate(self):

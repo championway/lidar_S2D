@@ -23,8 +23,8 @@ import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='epoch to start training from')
-parser.add_argument('--n_epochs', type=int, default=300, help='number of epochs of training')
-parser.add_argument('--dataset_name', type=str, default="S2D_16", help='name of the dataset')
+parser.add_argument('--n_epochs', type=int, default=500, help='number of epochs of training')
+parser.add_argument('--dataset_name', type=str, default="S2D_16_dilate_blur", help='name of the dataset')
 parser.add_argument('--batch_size', type=int, default=1, help='size of the batches')
 parser.add_argument('--lr', type=float, default=0.0002, help='adam: learning rate')
 parser.add_argument('--b1', type=float, default=0.5, help='adam: decay of first order momentum of gradient')
@@ -34,16 +34,17 @@ parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads 
 parser.add_argument('--img_height', type=int, default=512, help='size of image height')
 parser.add_argument('--img_width', type=int, default=512, help='size of image width')
 parser.add_argument('--channels', type=int, default=1, help='number of image channels')
-parser.add_argument('--sample_interval', type=int, default=200, help='interval between sampling of images from generators')
-parser.add_argument('--checkpoint_interval', type=int, default=10, help='interval between model checkpoints')
-parser.add_argument('--pretrained', type=bool, default=True, help='Use pretrained model or not')
+parser.add_argument('--sample_interval', type=int, default=400, help='interval between sampling of images from generators')
+parser.add_argument('--checkpoint_interval', type=int, default=20, help='interval between model checkpoints')
+parser.add_argument('--pretrained', type=bool, default=False, help='Use pretrained model or not')
 opt = parser.parse_args()
 print(opt)
 
-root = "/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/"
+data_root = "/media/arg_ws3/5E703E3A703E18EB/data/lidar_S2D/"
+save_root = "/media/arg_ws3/5E703E3A703E18EB/research/lidar_S2D/"
 
-os.makedirs(root + 'result/' + 'images/%s' % opt.dataset_name, exist_ok=True)
-os.makedirs(root + 'result/' + 'saved_models/%s' % opt.dataset_name, exist_ok=True)
+os.makedirs(save_root + 'result/' + 'images/%s' % opt.dataset_name, exist_ok=True)
+os.makedirs(save_root + 'result/' + 'saved_models/%s' % opt.dataset_name, exist_ok=True)
 
 cuda = True if torch.cuda.is_available() else False
 
@@ -89,10 +90,10 @@ transforms_A = [ transforms.Resize((opt.img_height, opt.img_width), Image.BICUBI
 transforms_B = [ transforms.Resize((opt.img_height, opt.img_width), Image.BICUBIC),
                 transforms.ToTensor() ]
 
-dataloader = DataLoader(ImageDataset(root, transforms_=transforms_B, mode='train'),
+dataloader = DataLoader(ImageDataset(data_root, transforms_=transforms_B, mode='train'),
                         batch_size=opt.batch_size, shuffle=True, num_workers=opt.n_cpu)
 
-val_dataloader = DataLoader(ImageDataset(root, transforms_=transforms_B, mode='test'),
+val_dataloader = DataLoader(ImageDataset(data_root, transforms_=transforms_B, mode='test'),
                             batch_size=2, shuffle=True, num_workers=1)
 
 # Tensor type
@@ -105,7 +106,7 @@ def sample_images(batches_done):
     real_B = Variable(imgs['A'].type(Tensor))
     fake_B = generator(real_A)
     img_sample = torch.cat((real_A.data, fake_B.data, real_B.data), -1)
-    save_image(img_sample, root + 'result/' + 'images/%s/%s.png' % (opt.dataset_name, batches_done), nrow=1, normalize=True)
+    save_image(img_sample, save_root + 'result/' + 'images/%s/%s.png' % (opt.dataset_name, batches_done), nrow=1, normalize=True)
 
 # ----------
 #  Training
@@ -132,7 +133,7 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
         # GAN loss
         fake_B = generator(real_A)
-        print('\n', real_B.max().item(), fake_B.max().item(), real_B.min().item(), real_B.min().item())
+        #print('\n', real_B.max().item(), fake_B.max().item(), real_B.min().item(), real_B.min().item())
 
         # Key points
         '''key_points_A = []
@@ -204,7 +205,7 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
     if opt.checkpoint_interval != -1 and epoch % opt.checkpoint_interval == 0:
         # Save model checkpoints
-        torch.save(generator.state_dict(), root + 'result/' + 'saved_models/%s/generator_%d.pth' % (opt.dataset_name, epoch))
-        torch.save(discriminator.state_dict(), root + 'result/' + 'saved_models/%s/discriminator_%d.pth' % (opt.dataset_name, epoch))
-torch.save(generator.state_dict(), root + 'result/' + 'saved_models/%s/generator.pth' % (opt.dataset_name))
-torch.save(discriminator.state_dict(), root + 'result/' + 'saved_models/%s/discriminator.pth' % (opt.dataset_name))
+        torch.save(generator.state_dict(), save_root + 'result/' + 'saved_models/%s/generator_%d.pth' % (opt.dataset_name, epoch))
+        torch.save(discriminator.state_dict(), save_root + 'result/' + 'saved_models/%s/discriminator_%d.pth' % (opt.dataset_name, epoch))
+torch.save(generator.state_dict(), save_root + 'result/' + 'saved_models/%s/generator.pth' % (opt.dataset_name))
+torch.save(discriminator.state_dict(), save_root + 'result/' + 'saved_models/%s/discriminator.pth' % (opt.dataset_name))

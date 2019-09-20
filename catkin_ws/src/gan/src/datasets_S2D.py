@@ -16,6 +16,8 @@ class ImageDataset(Dataset):
         self.files = []
         self.A_folder = A_folder
         self.B_folder = B_folder
+        self.dilate_kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(10, 10))
+        self.blur_kernel = (10, 10)
         for line in open(os.path.join(root, 'data_list', mode + '.txt')):
             self.files.append(line.strip())
 
@@ -25,8 +27,11 @@ class ImageDataset(Dataset):
         B_path = os.path.join(self.root, self.B_folder, self.files[idx] + ".png")
         img_A = Image.open(A_path)
         img_B = Image.open(B_path)
-        img_A = np.array(img_A)/655
+        img_A = np.array(img_A)/655.
         img_B = np.array(img_B)/655.
+
+        img_B = cv2.dilate(img_B, self.dilate_kernel)
+        img_B = cv2.blur(img_B, self.blur_kernel, 0)
 
         #img_A = cv2.resize(img_A, (512, 512))
         #img_B = cv2.resize(img_B, (512, 512))
